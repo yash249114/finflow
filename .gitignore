@@ -1,11 +1,74 @@
-.env
-*.env
+# Dependency directories
 node_modules/
+/jspm_packages/
+web_modules/
+
+# Build outputs
 .next/
-__pycache__/
-*.pyc
-ml-service/models/*.joblib
-*.log
-.DS_Store
 dist/
 build/
+out/
+bin/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Go builds and caches
+api/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+api/cov-int/
+
+# Python caches and virtualenvs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+.pytest_cache/
+
+# ML models and temporary files
+ml-service/models/*.joblib
+ml-service/.pytest_cache/
