@@ -1,0 +1,24 @@
+date,description,amount,category
+2024-01-05,Office Supplies - Staples,-45.99,Office
+2024-01-07,Client Payment - Acme Corp,2500.00,Revenue
+2024-01-10,AWS Monthly Bill,-312.47,Infrastructure
+2024-01-12,Team Lunch,-87.50,Meals
+2024-01-15,Contractor Invoice - Design Work,-1200.00,Contractors
+2024-01-18,Product Sale - Invoice 1042,950.00,Revenue
+2024-01-22,Google Workspace Business,-18.00,Infrastructure
+2024-01-25,Facebook Ads Campaign,-450.00,Marketing
+2024-01-28,Electricity Bill,-220.00,Utilities
+2024-02-01,Client Payment - Beta Corp,3200.00,Revenue
+2024-02-03,Notion + Linear Subscriptions,-45.00,Infrastructure
+2024-02-07,Team Lunch,-95.00,Meals
+2024-02-10,Payroll February,-8500.00,Payroll
+2024-02-14,AWS Monthly Bill,-334.20,Infrastructure
+2024-02-18,Client Payment - Gamma Ltd,1800.00,Revenue
+2024-02-20,Business Travel - Flights,-680.00,Travel
+2024-02-25,Office Rent March,-1500.00,Office
+2024-03-01,Client Payment - Delta Inc,4100.00,Revenue
+2024-03-05,Contractor Invoice - Dev Work,-2200.00,Contractors
+2024-03-10,AWS Monthly Bill,-298.15,Infrastructure
+BAD-DATE,malformed row,100.00,Test
+2024-03-15,,75.00,
+2024-03-20,Missing Amount Row,,Office

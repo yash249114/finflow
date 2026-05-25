@@ -1,0 +1,72 @@
+# .github/workflows/ci.yml
+name: FinFlow CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Go API Tests ────────────────────────────────────
+  test-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Download dependencies
+        working-directory: ./api
+        run: go mod download
+
+      - name: Vet
+        working-directory: ./api
+        run: go vet ./...
+
+      - name: Test
+        working-directory: ./api
+        run: go test ./... -v
+
+  # ── Python ML Tests ────────────────────────────────
+  test-ml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r ml-service/requirements.txt
+
+      - name: Run tests
+        working-directory: ./ml-service
+        run: pytest tests/ -v
+
+  # ── Docker Build ───────────────────────────────────
+  build:
+    needs: [test-api, test-ml]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t finflow-api ./api
+
+      - name: Build ML Service image
+        run: docker build -t finflow-ml ./ml-service
+
+      - name: Build Frontend image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=http://localhost:8080 \
+            -t finflow-frontend ./frontend

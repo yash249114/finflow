@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #08090A;
+    color: #F9FAFB;
+  }
+
+  body {
+    background-color: #08090A;
+    color: #F9FAFB;
+    font-family: var(--font-inter), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Ultra-subtle YC-style noise texture overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    opacity: 0.018;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background-color: rgba(99, 102, 241, 0.35); /* electric indigo selection */
+    color: #F9FAFB;
+  }
+
+  /* Custom dark obsidian scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #08090A;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1D1E22;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2D2E34;
+  }
+}
+
+/* Custom premium visual classes */
+.aurora-blur {
+  filter: blur(120px);
+  will-change: transform;
+}
+
+.glass-card {
+  background: rgba(15, 16, 18, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.text-gradient-sweep {
+  background-size: 200% auto;
+  animation: text-sweep 6s linear infinite;
+}
+
+/* Premium glassmorphic buttons with internal glow sweeps */
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 4px 20px -3px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-premium::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  transition: all 0.5s ease;
+  pointer-events: none;
+}
+
+.btn-premium:hover::before {
+  left: 100%;
+}
+
+.btn-premium:hover {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 25px -3px rgba(99, 102, 241, 0.25), 0 0 15px rgba(99, 102, 241, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+/* Chrome highlight button variant */
+.btn-chrome {
+  position: relative;
+  overflow: hidden;
+  background: rgba(15, 16, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-chrome:hover {
+  background: rgba(25, 26, 28, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 25px -3px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* Premium input elements with animated focus glows */
+.input-premium {
+  background: rgba(15, 16, 18, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #fff;
+}
+
+.input-premium:focus {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.2) inset;
+  background: rgba(15, 16, 18, 0.8);
+}
