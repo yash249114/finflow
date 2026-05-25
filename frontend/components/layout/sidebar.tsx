@@ -19,7 +19,7 @@ export default function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     // 1. Check local cache

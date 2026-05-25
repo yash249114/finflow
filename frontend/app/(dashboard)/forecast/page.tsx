@@ -60,7 +60,7 @@ export default function ForecastPage() {
   const [error, setError] = useState<string | null>(null);
   const [cacheStatus, setCacheStatus] = useState<"cached" | "live">("live");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Check plan status
   useEffect(() => {
