@@ -13,6 +13,14 @@ import BackButton from "@/components/ui/back-button";
 
 export default function RegisterPage() {
   const router = useRouter();
+
+  // Redirect if already logged in client-side
+  useEffect(() => {
+    const cachedUser = localStorage.getItem("ff_user");
+    if (cachedUser) {
+      router.push("/dashboard");
+    }
+  }, [router]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

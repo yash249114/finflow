@@ -21,6 +21,14 @@ export default function LoginPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  // Redirect if already logged in client-side
+  React.useEffect(() => {
+    const cachedUser = localStorage.getItem("ff_user");
+    if (cachedUser) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;

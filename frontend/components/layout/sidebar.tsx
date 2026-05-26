@@ -47,6 +47,10 @@ export default function Sidebar() {
             setUser(data.user);
             localStorage.setItem("ff_user", JSON.stringify(data.user));
           }
+        } else {
+          localStorage.removeItem("ff_user");
+          document.cookie = "access_token_exists=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          router.push("/login");
         }
       } catch {
         // let page handle redirect if needed
@@ -54,7 +58,7 @@ export default function Sidebar() {
     };
 
     fetchUser();
-  }, [API_URL]);
+  }, [API_URL, router]);
 
   const handleLogout = async () => {
     try {
