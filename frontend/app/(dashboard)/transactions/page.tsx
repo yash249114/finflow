@@ -70,7 +70,7 @@ export default function TransactionsPage() {
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [showErrorAccordion, setShowErrorAccordion] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
   // Categories list for filter dropdown
   const categories = [

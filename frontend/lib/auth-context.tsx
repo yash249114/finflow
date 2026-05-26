@@ -31,7 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasFetched = useRef(false)
 
   // Use fallback dummy values during next build/static generation
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
+  const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
+  const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '')
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
   const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)

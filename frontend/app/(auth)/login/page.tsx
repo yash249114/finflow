@@ -13,76 +13,8 @@ import BackButton from "@/components/ui/back-button";
 import { useAuth } from "@/lib/auth-context";
 import { createBrowserClient } from "@supabase/ssr";
 
-// Safe redirect sanitization utility to prevent absolute URLs and open redirect loops
-function getSafeRedirectPath(path: string | null | undefined): string {
-  console.log("[Login Debug] Raw input redirect path received:", path);
-  
-  if (!path) {
-    console.log("[Login Debug] Path is empty, null, or undefined. Defaulting to /dashboard");
-    return "/dashboard";
-  }
-
-  // Prevent double encoding by decoding recursively (up to 3 times) until stable
-  let decoded = path;
-  let prevDecoded = "";
-  let iterations = 0;
-  
-  while (decoded.includes("%") && decoded !== prevDecoded && iterations < 3) {
-    prevDecoded = decoded;
-    try {
-      decoded = decodeURIComponent(decoded);
-      iterations++;
-    } catch {
-      break;
-    }
-  }
-
-  decoded = decoded.trim();
-
-  // Parse using a dummy absolute base URL to detect invalid absolute URLs, external URLs, and scheme shifts
-  try {
-    const dummyBase = "http://internal-dummy-base.local";
-    const parsedUrl = new URL(decoded, dummyBase);
-    
-    // If the origin does not match the dummyBase, it is an absolute URL pointing to a different host
-    if (parsedUrl.origin !== dummyBase) {
-      console.warn("[Login Debug] Rejected unsafe absolute or external redirect target:", decoded);
-      return "/dashboard";
-    }
-
-    // Ensure the protocol is exactly http (as inherited from the dummy base) to block other schemes
-    if (parsedUrl.protocol !== "http:") {
-      console.warn("[Login Debug] Rejected invalid scheme/protocol target:", parsedUrl.protocol);
-      return "/dashboard";
-    }
-
-    // Extract path and query params/hashes
-    let safePath = parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
-
-    // Enforce relative path starting with /
-    if (!safePath.startsWith("/")) {
-      safePath = "/" + safePath;
-    }
-
-    // Clean multiple leading slashes (e.g. ///dashboard -> /dashboard)
-    safePath = safePath.replace(/^\/+/, "/");
-
-    // Prevent recursive authentication redirect loops
-    if (
-      safePath.startsWith("/login") ||
-      safePath.startsWith("/register")
-    ) {
-      console.warn("[Login Debug] Prevented recursive auth loop redirection for:", safePath);
-      return "/dashboard";
-    }
-
-    console.log("[Login Debug] Sanitized path successfully resolved:", safePath);
-    return safePath;
-  } catch (err) {
-    console.error("[Login Debug] Failed to parse redirect path, falling back to /dashboard:", err);
-    return "/dashboard";
-  }
-}
+// Removed getSafeRedirectPath function to ensure no malformed URL objects are created client-side.
+// The login flow will now redirect authenticated sessions exclusively to "/dashboard".
 
 function LoginForm() {
   const router = useRouter();
@@ -101,14 +33,24 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
+      const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
+      const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '');
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
+      console.log("[Login Debug] Initializing Supabase client. cleanUrl:", supabaseUrl);
       const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
+      console.log("[Login Debug] Attempting signInWithPassword for email:", email);
       const { data, error: apiError } = await supabase.auth.signInWithPassword({
         email,
         password,
+      });
+
+      console.log("[Login Debug] signInWithPassword result:", {
+        success: !apiError,
+        hasSession: !!data.session,
+        userEmail: data.session?.user?.email,
+        error: apiError?.message
       });
 
       if (apiError) {
@@ -149,17 +91,14 @@ function LoginForm() {
         });
       }
 
-      // Parse and sanitize destination URL
       const rawFrom = searchParams.get("from");
-      const targetPath = getSafeRedirectPath(rawFrom);
-      
-      console.log(`[Login Debug] Successful session confirmed. Initiating redirect delay. rawFrom=[${rawFrom}], targetPath=[${targetPath}]`);
+      console.log(`[Login Debug] Successful session confirmed. Initiating redirect delay. rawFrom=[${rawFrom}], targetPath=[/dashboard]`);
       
       // Wait a short duration (100ms) to ensure Supabase state propagation, cookie commit, and React context update complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      console.log(`[Login Debug] Redirecting to target path: ${targetPath}`);
-      router.push(targetPath);
+      console.log("[Login Debug] Redirecting target navigation: /dashboard (using router.replace)");
+      router.replace("/dashboard");
     } catch (err) {
       console.error("[Login Debug] Login submission error:", err);
       setError("Something went wrong. Please try again.");

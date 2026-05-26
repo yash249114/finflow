@@ -19,7 +19,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Use fallback dummy values during next build/static generation
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
+  const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
+  const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '')
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
   // If using placeholder variables (e.g. at build time), skip middleware execution
@@ -49,7 +50,7 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired
-  console.log(`[Middleware] Checking session for: ${pathname}`)
+  console.log(`[Middleware Debug] Checking session for pathname: ${pathname}`)
   const { data: { session } } = await supabase.auth.getSession()
 
   const isProtectedPath =
@@ -63,16 +64,18 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/register')
 
   if (isProtectedPath && !session) {
-    console.log(`[Middleware Debug] Unauthorized access to protected path. Source: ${pathname}`)
+    console.log(`[Middleware Debug] Protected path access denied. pathname=[${pathname}], session=[${!!session}]`);
     
     // Safely assign relative redirect path to prevent absolute URL injection
-    const sanitizedFrom = pathname.replace(/^\/+/, '/')
+    const relativeFrom = '/' + pathname.replace(/^\/+/, '')
     
     // Construct a clean, valid absolute URL for /login with unencoded / in the query param
     // to strictly satisfy: "/login?from=/dashboard" and never malformed encoded paths.
-    const loginUrl = new URL(`/login?from=${sanitizedFrom}`, request.url)
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.search = `?from=${relativeFrom}`
     
-    console.log(`[Middleware Debug] Redirect target URL generated: ${loginUrl.toString()}`)
+    console.log(`[Middleware Debug] Redirecting unauthorized user to login. Generated URL values: pathname=[${loginUrl.pathname}], search=[${loginUrl.search}], absolute=[${loginUrl.toString()}]`);
+    
     const redirectResponse = NextResponse.redirect(loginUrl)
     
     // Copy updated cookies (including all attributes like path, domain, secure, httpOnly) so refreshed session is not lost
@@ -84,10 +87,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthPath && session) {
-    console.log(`[Middleware Debug] Authorized session detected on auth route: ${pathname}`)
+    console.log(`[Middleware Debug] Auth path access with active session. pathname=[${pathname}], session=[${!!session}]`);
     const redirectUrl = new URL('/dashboard', request.url)
     
-    console.log(`[Middleware Debug] Redirect target URL generated: ${redirectUrl.toString()}`)
+    console.log(`[Middleware Debug] Redirecting authorized user to dashboard. Generated URL values: pathname=[${redirectUrl.pathname}], search=[${redirectUrl.search}], absolute=[${redirectUrl.toString()}]`);
+    
     const redirectResponse = NextResponse.redirect(redirectUrl)
     
     // Copy updated cookies (including all attributes like path, domain, secure, httpOnly) so refreshed session is not lost

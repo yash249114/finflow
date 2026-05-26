@@ -18,7 +18,7 @@ export default function BillingPage() {
   // Accordion state
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
   useEffect(() => {
     const fetchUser = async () => {

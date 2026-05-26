@@ -62,7 +62,7 @@ export default function ForecastPage() {
   const [error, setError] = useState<string | null>(null);
   const [cacheStatus, setCacheStatus] = useState<"cached" | "live">("live");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
   // Check plan status and load historical transactions if pro
   useEffect(() => {
