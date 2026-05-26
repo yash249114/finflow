@@ -1,19 +1,28 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/sidebar";
 import { Menu, X, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
-export default function LayoutClient({
+export function LayoutClient({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   const pathname = usePathname();
+  const { user, loading } = useAuth()
+  const router = useRouter()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { user } = useAuth();
+
+  useEffect(() => {
+    // ONLY redirect after loading is complete AND user is null
+    if (!loading && !user) {
+      router.replace('/login')
+    }
+  }, [loading, user, router])
 
   const getPageTitle = () => {
     if (pathname === "/dashboard") return "Dashboard";
@@ -33,8 +42,26 @@ export default function LayoutClient({
       .toUpperCase();
   };
 
+  // Show full-page spinner while verifying auth
+  // This blocks any flash of dashboard content
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#08090A]">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-500 text-sm">Verifying session...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Still null after loading = redirect in progress
+  if (!user) {
+    return null
+  }
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-gray-300 font-sans select-none">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#08090A] text-gray-300 font-sans select-none">
       {/* Desktop Sidebar (Left) */}
       <div className="hidden md:block shrink-0 h-full">
         <Sidebar />
@@ -80,17 +107,15 @@ export default function LayoutClient({
 
           {/* Right Area items */}
           <div className="flex items-center space-x-4">
-            {user && (
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider border ${
-                  user.plan === "pro"
-                    ? "bg-success/15 border-success/30 text-success"
-                    : "bg-gray-800 border-gray-700 text-text-muted"
-                }`}
-              >
-                {user.plan} Plan
-              </span>
-            )}
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider border ${
+                user.plan === "pro"
+                  ? "bg-success/15 border-success/30 text-success"
+                  : "bg-gray-800 border-gray-700 text-text-muted"
+              }`}
+            >
+              {user.plan} Plan
+            </span>
 
             {/* Notification Bell */}
             <button className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-900 transition-colors">
@@ -98,11 +123,9 @@ export default function LayoutClient({
             </button>
 
             {/* User Initials Badge */}
-            {user && (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white uppercase border border-blue-500/20">
-                {getInitials(user.full_name)}
-              </div>
-            )}
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white uppercase border border-blue-500/20">
+              {getInitials(user.full_name)}
+            </div>
           </div>
         </header>
 
@@ -112,5 +135,5 @@ export default function LayoutClient({
         </main>
       </div>
     </div>
-  );
+  )
 }

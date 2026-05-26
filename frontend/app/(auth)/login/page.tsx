@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Check, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Logo from "@/components/ui/logo";
@@ -12,7 +13,8 @@ import BackButton from "@/components/ui/back-button";
 import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const router = useRouter();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,38 +38,43 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        const userData = data.user || { email, plan: "free", full_name: "User" };
-        toast.success("Welcome back to FinFlow!");
-
-        // Fire-and-forget welcome notification/email via Web3Forms
-        const web3Key = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
-        if (web3Key) {
-          fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              access_key: web3Key,
-              subject: "Welcome back to FinFlow",
-              email: email,
-              message: "Welcome back! You have successfully signed in to FinFlow. Manage your cash flows dynamically.",
-            }),
-          }).catch(() => {
-            // Silently ignore email dispatch errors
-          });
-        }
-
-        login(userData);
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setError(errData.error || "Invalid email or password. Please try again.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Invalid credentials");
+        return;
       }
+
+      const data = await res.json();
+      const userData = data.user;
+
+      // Directly set user in context
+      setUser(userData);
+      toast.success("Welcome back to FinFlow!");
+
+      // Fire-and-forget welcome notification/email via Web3Forms
+      const web3Key = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+      if (web3Key) {
+        fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            access_key: web3Key,
+            subject: "FinFlow — User Login",
+            email: email,
+            message: `User logged in: ${email}`,
+          }),
+        }).catch(() => {
+          // Silently ignore email dispatch errors
+        });
+      }
+
+      // Redirect AFTER user is set in context
+      router.push("/dashboard");
     } catch {
-      setError("Unable to connect to login services.");
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

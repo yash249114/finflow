@@ -1,9 +1,9 @@
-import LayoutClient from "./layout-client";
+import { LayoutClient } from './layout-client'
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  return <LayoutClient>{children}</LayoutClient>;
+  return <LayoutClient>{children}</LayoutClient>
 }

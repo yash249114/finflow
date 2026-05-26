@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function BillingPage() {
   const searchParams = useSearchParams();
-  const { user, refresh } = useAuth();
+  const { user, refetch } = useAuth();
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function BillingPage() {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        await refresh();
+        await refetch();
       } catch {
         toast.error("Failed to load user billing state");
       } finally {
@@ -41,7 +41,7 @@ export default function BillingPage() {
       // Stop confetti animation after 6 seconds
       setTimeout(() => setShowConfetti(false), 6000);
     }
-  }, [searchParams, refresh]);
+  }, [searchParams, refetch]);
 
   // Trigger Lemon Squeezy Checkout
   const handleUpgrade = async () => {
