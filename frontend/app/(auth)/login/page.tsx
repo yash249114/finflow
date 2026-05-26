@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Check, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Logo from "@/components/ui/logo";
@@ -13,8 +13,80 @@ import BackButton from "@/components/ui/back-button";
 import { useAuth } from "@/lib/auth-context";
 import { createBrowserClient } from "@supabase/ssr";
 
-export default function LoginPage() {
+// Safe redirect sanitization utility to prevent absolute URLs and open redirect loops
+function getSafeRedirectPath(path: string | null | undefined): string {
+  console.log("[Login Debug] Raw input redirect path received:", path);
+  
+  if (!path) {
+    console.log("[Login Debug] Path is empty, null, or undefined. Defaulting to /dashboard");
+    return "/dashboard";
+  }
+
+  // Prevent double encoding by decoding recursively (up to 3 times) until stable
+  let decoded = path;
+  let prevDecoded = "";
+  let iterations = 0;
+  
+  while (decoded.includes("%") && decoded !== prevDecoded && iterations < 3) {
+    prevDecoded = decoded;
+    try {
+      decoded = decodeURIComponent(decoded);
+      iterations++;
+    } catch {
+      break;
+    }
+  }
+
+  decoded = decoded.trim();
+
+  // Parse using a dummy absolute base URL to detect invalid absolute URLs, external URLs, and scheme shifts
+  try {
+    const dummyBase = "http://internal-dummy-base.local";
+    const parsedUrl = new URL(decoded, dummyBase);
+    
+    // If the origin does not match the dummyBase, it is an absolute URL pointing to a different host
+    if (parsedUrl.origin !== dummyBase) {
+      console.warn("[Login Debug] Rejected unsafe absolute or external redirect target:", decoded);
+      return "/dashboard";
+    }
+
+    // Ensure the protocol is exactly http (as inherited from the dummy base) to block other schemes
+    if (parsedUrl.protocol !== "http:") {
+      console.warn("[Login Debug] Rejected invalid scheme/protocol target:", parsedUrl.protocol);
+      return "/dashboard";
+    }
+
+    // Extract path and query params/hashes
+    let safePath = parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+
+    // Enforce relative path starting with /
+    if (!safePath.startsWith("/")) {
+      safePath = "/" + safePath;
+    }
+
+    // Clean multiple leading slashes (e.g. ///dashboard -> /dashboard)
+    safePath = safePath.replace(/^\/+/, "/");
+
+    // Prevent recursive authentication redirect loops
+    if (
+      safePath.startsWith("/login") ||
+      safePath.startsWith("/register")
+    ) {
+      console.warn("[Login Debug] Prevented recursive auth loop redirection for:", safePath);
+      return "/dashboard";
+    }
+
+    console.log("[Login Debug] Sanitized path successfully resolved:", safePath);
+    return safePath;
+  } catch (err) {
+    console.error("[Login Debug] Failed to parse redirect path, falling back to /dashboard:", err);
+    return "/dashboard";
+  }
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -77,9 +149,19 @@ export default function LoginPage() {
         });
       }
 
-      // Redirect AFTER user is set in context
-      router.push("/dashboard");
-    } catch {
+      // Parse and sanitize destination URL
+      const rawFrom = searchParams.get("from");
+      const targetPath = getSafeRedirectPath(rawFrom);
+      
+      console.log(`[Login Debug] Successful session confirmed. Initiating redirect delay. rawFrom=[${rawFrom}], targetPath=[${targetPath}]`);
+      
+      // Wait a short duration (100ms) to ensure Supabase state propagation, cookie commit, and React context update complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      console.log(`[Login Debug] Redirecting to target path: ${targetPath}`);
+      router.push(targetPath);
+    } catch (err) {
+      console.error("[Login Debug] Login submission error:", err);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -247,5 +329,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#08090A] flex items-center justify-center text-gray-100 font-sans">
+        <div className="animate-spin h-8 w-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

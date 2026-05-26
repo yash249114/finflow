@@ -20,10 +20,10 @@ export function LayoutClient({
   useEffect(() => {
     // ONLY redirect after loading is complete AND user is null
     if (!loading && !user) {
-      console.log("[LayoutClient] Verification complete. User is null. Redirecting to /login")
-      router.replace('/login')
+      console.log(`[LayoutClient Debug] Verification complete. User is null. Redirecting to /login?from=${pathname}`)
+      router.replace(`/login?from=${pathname}`)
     }
-  }, [loading, user, router])
+  }, [loading, user, router, pathname])
 
   const getPageTitle = () => {
     if (pathname === "/dashboard") return "Dashboard";

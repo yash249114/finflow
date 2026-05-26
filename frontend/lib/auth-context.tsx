@@ -47,11 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hasFetched.current = true
 
     try {
-      console.log("[AuthContext] Fetching Supabase session...")
+      console.log("[AuthContext Debug] Fetching Supabase session...")
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session) {
-        console.log("[AuthContext] Supabase session found:", session.user.email)
+        console.log("[AuthContext Debug] Supabase session successfully verified and confirmed:", session.user.email)
         const sbUser = session.user
         const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro'
         setUser({
@@ -61,17 +61,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           plan
         })
       } else {
-        console.log("[AuthContext] No Supabase session found")
+        console.log("[AuthContext Debug] No active session retrieved from getSession()")
         setUser(null)
       }
     } catch (error) {
-      console.error('[AuthContext] Auth fetch error:', error)
+      console.error('[AuthContext Debug] Auth fetch error:', error)
     } finally {
       setLoading(false)
     }
   }, [supabase])
 
   const refetch = useCallback(async () => {
+    console.log("[AuthContext Debug] Requesting manual context refetch...")
     hasFetched.current = false
     setLoading(true)
     await fetchUser()
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("[AuthContext] onAuthStateChange event:", event, session?.user?.email)
+        console.log(`[AuthContext Debug] onAuthStateChange event received [${event}]:`, session?.user?.email)
         if (session) {
           const sbUser = session.user
           const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro'
@@ -111,11 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      console.log("[AuthContext] Logging out from Supabase...")
+      console.log("[AuthContext] Signing out from Supabase Auth service...")
       await supabase.auth.signOut()
     } catch (e) {
       console.error("[AuthContext] Supabase signout error:", e)
     } finally {
+      console.log("[AuthContext] Clearing session state locally and redirecting to /login")
       setUser(null)
       hasFetched.current = false
       router.push('/login')
