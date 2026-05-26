@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import BackButton from "@/components/ui/back-button";
 import { useAuth } from "@/lib/auth-context";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,34 +22,39 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
     setLoading(true);
     setError(null);
-
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+
+      const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+
+      const { data, error: apiError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || "Invalid credentials");
+      if (apiError) {
+        setError(apiError.message);
         return;
       }
 
-      const data = await res.json();
-      const userData = data.user;
+      if (data.session) {
+        const sbUser = data.session.user;
+        const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro';
+        setUser({
+          id: sbUser.id,
+          email: sbUser.email || '',
+          full_name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
+          plan
+        });
+      }
 
-      // Directly set user in context
-      setUser(userData);
       toast.success("Welcome back to FinFlow!");
 
       // Fire-and-forget welcome notification/email via Web3Forms

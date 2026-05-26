@@ -1,11 +1,56 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Check for access_token or access_token_exists indicator cookie
-  const token = request.cookies.get('access_token')?.value || request.cookies.get('access_token_exists')?.value
+  let response = NextResponse.next({
+    request,
+  })
+
+  // Skip static/public assets to avoid overhead
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')
+  ) {
+    return response
+  }
+
+  // Use fallback dummy values during next build/static generation
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+
+  // If using placeholder variables (e.g. at build time), skip middleware execution
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return response
+  }
+
+  const supabase = createServerClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refresh session if expired
+  console.log(`[Middleware] Checking session for: ${pathname}`)
+  const { data: { session } } = await supabase.auth.getSession()
 
   const isProtectedPath =
     pathname.startsWith('/dashboard') ||
@@ -17,19 +62,19 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/register')
 
-  // No token + protected route → redirect to login
-  if (isProtectedPath && !token) {
+  if (isProtectedPath && !session) {
+    console.log(`[Middleware] Unauthorized access to ${pathname}. Redirecting to /login`)
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('from', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Has token + auth page → redirect to dashboard
-  if (isAuthPath && token) {
+  if (isAuthPath && session) {
+    console.log(`[Middleware] Authorized session detected on auth route ${pathname}. Redirecting to /dashboard`)
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
