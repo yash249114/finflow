@@ -1,16 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/sidebar";
 import { Menu, X, Bell } from "lucide-react";
-
-interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  plan: string;
-}
+import { useAuth } from "@/lib/auth-context";
 
 export default function LayoutClient({
   children,
@@ -19,19 +13,7 @@ export default function LayoutClient({
 }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-
-  // Get user details for badge/avatar
-  useEffect(() => {
-    const cachedUser = localStorage.getItem("ff_user");
-    if (cachedUser) {
-      try {
-        setUser(JSON.parse(cachedUser));
-      } catch {
-        // ignore
-      }
-    }
-  }, [pathname]);
+  const { user } = useAuth();
 
   const getPageTitle = () => {
     if (pathname === "/dashboard") return "Dashboard";

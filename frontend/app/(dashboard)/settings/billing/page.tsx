@@ -5,17 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { Check, X, Sparkles, Lock, CreditCard, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/ui/loading-spinner";
-
-interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  plan: string;
-}
+import { useAuth } from "@/lib/auth-context";
 
 export default function BillingPage() {
   const searchParams = useSearchParams();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, refresh } = useAuth();
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -30,17 +24,7 @@ export default function BillingPage() {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/v1/auth/me`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-          localStorage.setItem("ff_user", JSON.stringify(data.user));
-        }
+        await refresh();
       } catch {
         toast.error("Failed to load user billing state");
       } finally {
@@ -57,7 +41,7 @@ export default function BillingPage() {
       // Stop confetti animation after 6 seconds
       setTimeout(() => setShowConfetti(false), 6000);
     }
-  }, [API_URL, searchParams]);
+  }, [searchParams, refresh]);
 
   // Trigger Lemon Squeezy Checkout
   const handleUpgrade = async () => {

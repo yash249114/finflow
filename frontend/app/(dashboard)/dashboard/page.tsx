@@ -31,12 +31,7 @@ import StatCard from "@/components/ui/stat-card";
 import AmountBadge from "@/components/ui/amount-badge";
 import CategoryBadge from "@/components/ui/category-badge";
 
-interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  plan: string;
-}
+import { useAuth } from "@/lib/auth-context";
 
 interface CategorySummary {
   category: string;
@@ -71,7 +66,7 @@ interface ForecastPoint {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [forecast, setForecast] = useState<ForecastPoint[]>([]);
@@ -81,32 +76,14 @@ export default function DashboardPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // 1. Fetch current profile
-        const userRes = await fetch(`${API_URL}/api/v1/auth/me`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-
-        if (!userRes.ok) {
-          localStorage.removeItem("ff_user");
-          document.cookie = "access_token_exists=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          router.push("/login");
-          return;
-        }
-
-        const userData = await userRes.json();
-        setUser(userData.user);
-        localStorage.setItem("ff_user", JSON.stringify(userData.user));
-
-        const userPlan = userData.user.plan;
-
-        // 2. Fetch summary & transactions in parallel
+        // 1. Fetch summary & transactions in parallel
         const [summaryRes, txRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/transactions/summary`, {
             method: "GET",
@@ -132,8 +109,8 @@ export default function DashboardPage() {
           setTransactions(fetchedTx);
         }
 
-        // 3. Fetch forecast if pro plan
-        if (userPlan === "pro") {
+        // 2. Fetch forecast if pro plan
+        if (user.plan === "pro") {
           try {
             const forecastRes = await fetch(`${API_URL}/api/v1/forecast?horizon=30`, {
               method: "GET",
@@ -156,7 +133,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [API_URL, router]);
+  }, [API_URL, user]);
 
   // Aggregate daily net data for chart
   const getChartData = () => {

@@ -1,84 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LayoutDashboard, ArrowLeftRight, TrendingUp, CreditCard, LogOut } from "lucide-react";
-import { toast } from "sonner";
 import Logo from "@/components/ui/logo";
-
-interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  plan: string;
-}
+import { useAuth } from "@/lib/auth-context";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-  useEffect(() => {
-    // 1. Check local cache
-    const cachedUser = localStorage.getItem("ff_user");
-    if (cachedUser) {
-      try {
-        setUser(JSON.parse(cachedUser));
-      } catch {
-        // ignore
-      }
-    }
-
-    // 2. Fetch fresh user context from /me
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/auth/me`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.user) {
-            setUser(data.user);
-            localStorage.setItem("ff_user", JSON.stringify(data.user));
-          }
-        } else {
-          localStorage.removeItem("ff_user");
-          document.cookie = "access_token_exists=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          router.push("/login");
-        }
-      } catch {
-        // let page handle redirect if needed
-      }
-    };
-
-    fetchUser();
-  }, [API_URL, router]);
+  const { user, logout } = useAuth();
 
   const handleLogout = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        localStorage.removeItem("ff_user");
-        document.cookie = "access_token_exists=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        toast.success("Successfully logged out");
-        router.push("/login");
-        router.refresh();
-      } else {
-        toast.error("Logout failed. Please try again.");
-      }
-    } catch {
-      toast.error("An error occurred during logout");
-    }
+    await logout();
   };
 
   const plan = user?.plan || "free";

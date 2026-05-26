@@ -902,19 +902,8 @@ export default function Home() {
 
             <div className="flex space-x-6 text-[11px]">
               <Link href="/about" className="hover:text-gray-300 transition-colors">About Us</Link>
-              <Link href="#" className="hover:text-gray-300 transition-colors">Privacy Policy</Link>
-              <Link href="#" className="hover:text-gray-300 transition-colors">Terms of Service</Link>
-            </div>
-
-            <div>
-              <a
-                href="https://github.com/yash249114/finflow"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-300 transition-colors font-semibold"
-              >
-                GitHub Code
-              </a>
+              <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>

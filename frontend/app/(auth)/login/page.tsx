@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Check, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Logo from "@/components/ui/logo";
@@ -10,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import BackButton from "@/components/ui/back-button";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,14 +20,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-  // Redirect if already logged in client-side
-  React.useEffect(() => {
-    const cachedUser = localStorage.getItem("ff_user");
-    if (cachedUser) {
-      router.push("/dashboard");
-    }
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +38,7 @@ export default function LoginPage() {
 
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem("ff_user", JSON.stringify(data.user || { email, plan: "free", full_name: "User" }));
-        document.cookie = "access_token_exists=true; path=/; max-age=900; SameSite=Lax; Secure";
+        const userData = data.user || { email, plan: "free", full_name: "User" };
         toast.success("Welcome back to FinFlow!");
 
         // Fire-and-forget welcome notification/email via Web3Forms
@@ -70,8 +61,7 @@ export default function LoginPage() {
           });
         }
 
-        router.push("/dashboard");
-        router.refresh();
+        login(userData);
       } else {
         const errData = await res.json().catch(() => ({}));
         setError(errData.error || "Invalid email or password. Please try again.");

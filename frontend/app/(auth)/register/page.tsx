@@ -14,13 +14,6 @@ import BackButton from "@/components/ui/back-button";
 export default function RegisterPage() {
   const router = useRouter();
 
-  // Redirect if already logged in client-side
-  useEffect(() => {
-    const cachedUser = localStorage.getItem("ff_user");
-    if (cachedUser) {
-      router.push("/dashboard");
-    }
-  }, [router]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -296,11 +289,11 @@ export default function RegisterPage() {
               />
               <label htmlFor="terms" className="text-[11px] text-gray-400">
                 I agree to the{" "}
-                <Link href="#" className="text-indigo-400 hover:underline">
+                <Link href="/terms" className="text-indigo-400 hover:underline">
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="#" className="text-indigo-400 hover:underline">
+                <Link href="/privacy" className="text-indigo-400 hover:underline">
                   Privacy Policy
                 </Link>
               </label>

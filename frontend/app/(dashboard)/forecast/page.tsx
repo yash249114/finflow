@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import AmountBadge from "@/components/ui/amount-badge";
+import { useAuth } from "@/lib/auth-context";
 
 interface ForecastPoint {
   date: string;
@@ -49,7 +50,8 @@ interface Transaction {
 }
 
 export default function ForecastPage() {
-  const [plan, setPlan] = useState<"free" | "pro" | null>(null);
+  const { user } = useAuth();
+  const plan = (user?.plan || "free") as "free" | "pro";
   const [horizon, setHorizon] = useState<30 | 60 | 90>(30);
   const [forecast, setForecast] = useState<ForecastPoint[]>([]);
   const [summary, setSummary] = useState<ForecastSummary | null>(null);
@@ -62,46 +64,35 @@ export default function ForecastPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Check plan status
+  // Check plan status and load historical transactions if pro
   useEffect(() => {
-    const checkAuth = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`${API_URL}/api/v1/auth/me`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
+    if (!user) return;
 
-        if (res.ok) {
-          const data = await res.json();
-          setPlan(data.user.plan);
-          localStorage.setItem("ff_user", JSON.stringify(data.user));
-          
-          if (data.user.plan === "pro") {
-            // Fetch historical tx data for chart
-            const txRes = await fetch(`${API_URL}/api/v1/transactions?limit=100`, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            });
-            if (txRes.ok) {
-              const txData = await txRes.json();
-              setHistorical(txData.data || []);
-            }
+    if (user.plan === "pro") {
+      const fetchHistorical = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const txRes = await fetch(`${API_URL}/api/v1/transactions?limit=100`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          });
+          if (txRes.ok) {
+            const txData = await txRes.json();
+            setHistorical(txData.data || []);
           }
-        } else {
-          setPlan("free");
+        } catch {
+          setError("Could not retrieve transaction history.");
+        } finally {
+          setLoading(false);
         }
-      } catch {
-        setError("Could not verify subscription credentials.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
-  }, [API_URL]);
+      };
+      fetchHistorical();
+    } else {
+      setLoading(false);
+    }
+  }, [API_URL, user]);
 
   // Fetch forecast data when plan='pro' or horizon updates
   useEffect(() => {
