@@ -39,6 +39,7 @@ export default function LoginPage() {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem("ff_user", JSON.stringify(data.user || { email, plan: "free", full_name: "User" }));
+        document.cookie = "access_token_exists=true; path=/; max-age=900; SameSite=Lax; Secure";
         toast.success("Welcome back to FinFlow!");
 
         // Fire-and-forget welcome notification/email via Web3Forms

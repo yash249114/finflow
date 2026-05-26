@@ -65,6 +65,7 @@ export default function Sidebar() {
 
       if (res.ok) {
         localStorage.removeItem("ff_user");
+        document.cookie = "access_token_exists=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         toast.success("Successfully logged out");
         router.push("/login");
         router.refresh();
