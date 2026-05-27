@@ -13,6 +13,17 @@ import BackButton from "@/components/ui/back-button";
 import { useAuth } from "@/lib/auth-context";
 import { createBrowserClient } from "@supabase/ssr";
 
+interface ReCaptchaInstance {
+  ready: (callback: () => void) => void;
+  execute: (siteKey: string, options: { action: string }) => Promise<string>;
+}
+
+declare global {
+  interface Window {
+    grecaptcha?: ReCaptchaInstance;
+  }
+}
+
 // Removed getSafeRedirectPath function to ensure no malformed URL objects are created client-side.
 // The login flow will now redirect authenticated sessions exclusively to "/dashboard".
 
@@ -26,6 +37,34 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (!siteKey) {
+      console.warn("[Login Captcha] NEXT_PUBLIC_RECAPTCHA_SITE_KEY is missing.");
+      return;
+    }
+
+    if (document.getElementById("recaptcha-script")) return;
+
+    const script = document.createElement("script");
+    script.id = "recaptcha-script";
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      const loadedScript = document.getElementById("recaptcha-script");
+      if (loadedScript) {
+        document.body.removeChild(loadedScript);
+      }
+      const badge = document.querySelector(".grecaptcha-badge");
+      if (badge) {
+        badge.remove();
+      }
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -33,6 +72,55 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     try {
+      const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+      let captchaToken = "";
+
+      if (siteKey) {
+        console.log("[Login Captcha] Triggering grecaptcha challenge...");
+        
+        await new Promise<void>((resolve, reject) => {
+          const checkReady = () => {
+            if (window.grecaptcha && window.grecaptcha.ready) {
+              window.grecaptcha.ready(resolve);
+            } else {
+              setTimeout(checkReady, 50);
+            }
+          };
+          setTimeout(() => reject(new Error("reCAPTCHA failed to load")), 5000);
+          checkReady();
+        });
+
+        if (!window.grecaptcha) {
+          throw new Error("reCAPTCHA is not loaded");
+        }
+        captchaToken = await window.grecaptcha.execute(siteKey, { action: "login" });
+        console.log("[Login Captcha] Token generated successfully.");
+      } else {
+        if (process.env.NODE_ENV !== "development") {
+          setError("Site captcha configuration missing.");
+          setLoading(false);
+          return;
+        }
+        console.warn("[Login Captcha] Site key missing, bypassing captcha check in development.");
+      }
+
+      if (captchaToken) {
+        console.log("[Login Captcha] Verifying token server-side...");
+        const verifyRes = await fetch("/api/verify-captcha", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+
+        if (!verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          setError(verifyData.error || "Suspicious activity detected. Please try again.");
+          setLoading(false);
+          return;
+        }
+        console.log("[Login Captcha] Verification succeeded.");
+      }
+
       const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
       const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '');
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
@@ -101,7 +189,8 @@ function LoginForm() {
       router.replace("/dashboard");
     } catch (err) {
       console.error("[Login Debug] Login submission error:", err);
-      setError("Something went wrong. Please try again.");
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }

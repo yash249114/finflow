@@ -12,6 +12,17 @@ import { toast } from "sonner";
 import BackButton from "@/components/ui/back-button";
 import { supabase } from "@/lib/supabase";
 
+interface ReCaptchaInstance {
+  ready: (callback: () => void) => void;
+  execute: (siteKey: string, options: { action: string }) => Promise<string>;
+}
+
+declare global {
+  interface Window {
+    grecaptcha?: ReCaptchaInstance;
+  }
+}
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -23,6 +34,34 @@ export default function RegisterPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (!siteKey) {
+      console.warn("[Register Captcha] NEXT_PUBLIC_RECAPTCHA_SITE_KEY is missing.");
+      return;
+    }
+
+    if (document.getElementById("recaptcha-script")) return;
+
+    const script = document.createElement("script");
+    script.id = "recaptcha-script";
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      const loadedScript = document.getElementById("recaptcha-script");
+      if (loadedScript) {
+        document.body.removeChild(loadedScript);
+      }
+      const badge = document.querySelector(".grecaptcha-badge");
+      if (badge) {
+        badge.remove();
+      }
+    };
+  }, []);
 
   // Password strength calculation
   const [strength, setStrength] = useState<{ score: number; label: string; color: string }>({
@@ -76,6 +115,55 @@ export default function RegisterPage() {
     setError(null);
 
     try {
+      const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+      let captchaToken = "";
+
+      if (siteKey) {
+        console.log("[Register Captcha] Triggering grecaptcha challenge...");
+        
+        await new Promise<void>((resolve, reject) => {
+          const checkReady = () => {
+            if (window.grecaptcha && window.grecaptcha.ready) {
+              window.grecaptcha.ready(resolve);
+            } else {
+              setTimeout(checkReady, 50);
+            }
+          };
+          setTimeout(() => reject(new Error("reCAPTCHA failed to load")), 5000);
+          checkReady();
+        });
+
+        if (!window.grecaptcha) {
+          throw new Error("reCAPTCHA is not loaded");
+        }
+        captchaToken = await window.grecaptcha.execute(siteKey, { action: "register" });
+        console.log("[Register Captcha] Token generated successfully.");
+      } else {
+        if (process.env.NODE_ENV !== "development") {
+          setError("Site captcha configuration missing.");
+          setLoading(false);
+          return;
+        }
+        console.warn("[Register Captcha] Site key missing, bypassing captcha check in development.");
+      }
+
+      if (captchaToken) {
+        console.log("[Register Captcha] Verifying token server-side...");
+        const verifyRes = await fetch("/api/verify-captcha", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+
+        if (!verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          setError(verifyData.error || "Suspicious activity detected. Please try again.");
+          setLoading(false);
+          return;
+        }
+        console.log("[Register Captcha] Verification succeeded.");
+      }
+
       console.log("[Register Debug] Initiating signUp call to Supabase for email:", email);
       const { data, error: apiError } = await supabase.auth.signUp({
         email,
@@ -128,7 +216,8 @@ export default function RegisterPage() {
       router.push("/login");
     } catch (err) {
       console.error("[Register Debug] Signup handler error:", err);
-      setError("Unable to connect to registration services.");
+      const message = err instanceof Error ? err.message : "Unable to connect to registration services.";
+      setError(message);
     } finally {
       setLoading(false);
     }
