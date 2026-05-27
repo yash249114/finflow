@@ -49,9 +49,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired
-  console.log(`[Middleware Debug] Checking session for pathname: ${pathname}`)
-  const { data: { session } } = await supabase.auth.getSession()
+  // Retrieve authentic user session
+  console.log(`[Middleware Debug] Checking user session for pathname: ${pathname}`)
+  const { data: { user } } = await supabase.auth.getUser()
 
   const isProtectedPath =
     pathname.startsWith('/dashboard') ||
@@ -63,42 +63,40 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/register')
 
-  if (isProtectedPath && !session) {
-    console.log(`[Middleware Debug] Protected path access denied. pathname=[${pathname}], session=[${!!session}]`);
-    
-    // Safely assign relative redirect path to prevent absolute URL injection
-    const relativeFrom = '/' + pathname.replace(/^\/+/, '')
-    
-    // Construct a clean, valid absolute URL for /login with unencoded / in the query param
-    // to strictly satisfy: "/login?from=/dashboard" and never malformed encoded paths.
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.search = `?from=${relativeFrom}`
-    
-    console.log(`[Middleware Debug] Redirecting unauthorized user to login. Generated URL values: pathname=[${loginUrl.pathname}], search=[${loginUrl.search}], absolute=[${loginUrl.toString()}]`);
-    
-    const redirectResponse = NextResponse.redirect(loginUrl)
-    
-    // Copy updated cookies (including all attributes like path, domain, secure, httpOnly) so refreshed session is not lost
-    response.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie)
-    })
-    
-    return redirectResponse
+  if (isProtectedPath) {
+    if (!user) {
+      console.log(`[Middleware Debug] Protected path access denied. No user found.`);
+      const relativeFrom = '/' + pathname.replace(/^\/+/, '')
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.search = `?from=${relativeFrom}`
+      
+      const redirectResponse = NextResponse.redirect(loginUrl)
+      response.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie)
+      })
+      return redirectResponse
+    }
+
+    if (!user.email_confirmed_at) {
+      console.log(`[Middleware Debug] Protected path access denied. Email not confirmed. user=[${user.email}]`);
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.search = `?error=email-not-confirmed`
+      
+      const redirectResponse = NextResponse.redirect(loginUrl)
+      response.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie)
+      })
+      return redirectResponse
+    }
   }
 
-  if (isAuthPath && session) {
-    console.log(`[Middleware Debug] Auth path access with active session. pathname=[${pathname}], session=[${!!session}]`);
+  if (isAuthPath && user && user.email_confirmed_at) {
+    console.log(`[Middleware Debug] Auth path access with active verified user session. Redirecting to dashboard.`);
     const redirectUrl = new URL('/dashboard', request.url)
-    
-    console.log(`[Middleware Debug] Redirecting authorized user to dashboard. Generated URL values: pathname=[${redirectUrl.pathname}], search=[${redirectUrl.search}], absolute=[${redirectUrl.toString()}]`);
-    
     const redirectResponse = NextResponse.redirect(redirectUrl)
-    
-    // Copy updated cookies (including all attributes like path, domain, secure, httpOnly) so refreshed session is not lost
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie)
     })
-    
     return redirectResponse
   }
 

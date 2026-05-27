@@ -15,6 +15,15 @@ import { createBrowserClient } from "@supabase/ssr";
 
 interface ReCaptchaInstance {
   ready: (callback: () => void) => void;
+  render: (containerId: string, options: {
+    sitekey?: string;
+    callback?: (token: string) => void;
+    "expired-callback"?: () => void;
+    "error-callback"?: () => void;
+    theme?: string;
+    size?: string;
+  }) => number;
+  reset: (opt_widget_id?: number) => void;
   execute: (siteKey: string, options: { action: string }) => Promise<string>;
 }
 
@@ -36,6 +45,18 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState("");
+
+  const showCaptcha = email.length > 0 && password.length > 0;
+
+  React.useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "email-not-confirmed") {
+      setError("Your email address is not verified yet. Please check your inbox for the confirmation link.");
+    } else if (errorParam === "auth-callback-failed") {
+      setError("Authentication failed during the callback challenge. Please try again.");
+    }
+  }, [searchParams]);
 
   React.useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -48,7 +69,7 @@ function LoginForm() {
 
     const script = document.createElement("script");
     script.id = "recaptcha-script";
-    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
@@ -65,6 +86,67 @@ function LoginForm() {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (!showCaptcha) return;
+
+    let timer: NodeJS.Timeout;
+    const renderWidget = () => {
+      if (window.grecaptcha && window.grecaptcha.render) {
+        const container = document.getElementById("recaptcha-container");
+        if (container && container.innerHTML === "") {
+          window.grecaptcha.render("recaptcha-container", {
+            sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+            callback: (token: string) => {
+              setCaptchaToken(token);
+            },
+            "expired-callback": () => {
+              setCaptchaToken("");
+            },
+            "error-callback": () => {
+              setCaptchaToken("");
+              toast.error("reCAPTCHA encountered an error. Please try again.");
+            }
+          });
+        }
+      } else {
+        timer = setTimeout(renderWidget, 100);
+      }
+    };
+
+    renderWidget();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showCaptcha]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
+      const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '');
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+      const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${appUrl}/auth/callback`,
+        }
+      });
+      
+      if (oauthError) throw oauthError;
+    } catch (err) {
+      console.error("[OAuth Debug] Google login error:", err);
+      const message = err instanceof Error ? err.message : "Google OAuth sign-in failed. Please try again.";
+      setError(message);
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -73,39 +155,15 @@ function LoginForm() {
     setError(null);
     try {
       const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-      let captchaToken = "";
 
       if (siteKey) {
-        console.log("[Login Captcha] Triggering grecaptcha challenge...");
-        
-        await new Promise<void>((resolve, reject) => {
-          const checkReady = () => {
-            if (window.grecaptcha && window.grecaptcha.ready) {
-              window.grecaptcha.ready(resolve);
-            } else {
-              setTimeout(checkReady, 50);
-            }
-          };
-          setTimeout(() => reject(new Error("reCAPTCHA failed to load")), 5000);
-          checkReady();
-        });
-
-        if (!window.grecaptcha) {
-          throw new Error("reCAPTCHA is not loaded");
-        }
-        captchaToken = await window.grecaptcha.execute(siteKey, { action: "login" });
-        console.log("[Login Captcha] Token generated successfully.");
-      } else {
-        if (process.env.NODE_ENV !== "development") {
-          setError("Site captcha configuration missing.");
+        if (!captchaToken) {
+          setError("Please complete the reCAPTCHA checkbox challenge.");
           setLoading(false);
           return;
         }
-        console.warn("[Login Captcha] Site key missing, bypassing captcha check in development.");
-      }
 
-      if (captchaToken) {
-        console.log("[Login Captcha] Verifying token server-side...");
+        console.log("[Login Captcha] Verifying checkbox token server-side...");
         const verifyRes = await fetch("/api/verify-captcha", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -116,9 +174,15 @@ function LoginForm() {
           const verifyData = await verifyRes.json();
           setError(verifyData.error || "Suspicious activity detected. Please try again.");
           setLoading(false);
+          if (window.grecaptcha) {
+            window.grecaptcha.reset();
+            setCaptchaToken("");
+          }
           return;
         }
         console.log("[Login Captcha] Verification succeeded.");
+      } else {
+        console.warn("[Login Captcha] Site key missing, bypassing captcha check in development.");
       }
 
       const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
@@ -142,7 +206,15 @@ function LoginForm() {
       });
 
       if (apiError) {
-        setError(apiError.message);
+        if (apiError.message.toLowerCase().includes("email not confirmed") || apiError.message.toLowerCase().includes("confirm your email")) {
+          setError("Your email address is not verified yet. Please check your inbox for the confirmation link.");
+        } else {
+          setError(apiError.message);
+        }
+        if (window.grecaptcha) {
+          window.grecaptcha.reset();
+          setCaptchaToken("");
+        }
         return;
       }
 
@@ -191,6 +263,10 @@ function LoginForm() {
       console.error("[Login Debug] Login submission error:", err);
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(message);
+      if (window.grecaptcha) {
+        window.grecaptcha.reset();
+        setCaptchaToken("");
+      }
     } finally {
       setLoading(false);
     }
@@ -316,6 +392,12 @@ function LoginForm() {
               </div>
             </div>
 
+            {showCaptcha && (
+              <div className="flex justify-center my-2 min-h-[78px]">
+                <div id="recaptcha-container" />
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-3 flex items-start space-x-2 text-xs">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -346,6 +428,33 @@ function LoginForm() {
               <span className="flex-shrink mx-4 text-[10px] uppercase font-bold text-gray-600">or</span>
               <div className="flex-grow border-t border-gray-800" />
             </div>
+
+            <Button
+              type="button"
+              disabled={loading}
+              onClick={handleGoogleLogin}
+              className="w-full bg-[#1e2022] hover:bg-[#2a2c2e] text-white h-10 rounded-xl font-semibold border border-gray-800 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              Continue with Google
+            </Button>
 
             <p className="text-center text-xs text-gray-400 mt-2">
               Don&apos;t have an account?{" "}
