@@ -16,10 +16,11 @@ func RequirePro() gin.HandlerFunc {
 			return
 		}
 
-		if plan.(string) != "pro" {
+		p := plan.(string)
+		if p != "pro" && p != "max" {
 			c.AbortWithStatusJSON(http.StatusPaymentRequired, gin.H{
 				"error":       "pro_required",
-				"message":     "This feature requires a Pro plan ($19/month). Upgrade to unlock forecasting and unlimited transactions.",
+				"message":     "This feature requires a Pro or Max plan. Upgrade to unlock forecasting and unlimited transactions.",
 				"upgrade_url": "/settings/billing",
 			})
 			return

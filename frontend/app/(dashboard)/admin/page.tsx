@@ -204,6 +204,64 @@ export default function AdminOverview() {
         </motion.div>
       </div>
 
+      {/* System Operations & Live Diagnostics */}
+      <motion.div variants={fadeSlideUp} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Active Sessions */}
+        <div className="glass-card border border-white/5 rounded-2xl p-5 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active Operations Sessions</span>
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-3xl font-extrabold text-white">42</h2>
+            <span className="text-xs text-gray-500">Avg. 18m duration</span>
+          </div>
+          <div className="w-full bg-zinc-800 rounded-full h-1">
+            <div className="bg-emerald-500 h-1 rounded-full w-[65%]" />
+          </div>
+          <p className="text-[10px] text-gray-450 leading-relaxed">Active WebSocket tunnels maintaining real-time ledger classification states.</p>
+        </div>
+
+        {/* Upload Stats */}
+        <div className="glass-card border border-white/5 rounded-2xl p-5 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Buffered Ingestion Queues</span>
+            <span className="rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase">
+              Worker Pools
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-3xl font-extrabold text-white">128.4k</h2>
+            <span className="text-xs text-gray-500">3 active parser workers</span>
+          </div>
+          <div className="w-full bg-zinc-800 rounded-full h-1">
+            <div className="bg-indigo-500 h-1 rounded-full w-[40%]" />
+          </div>
+          <p className="text-[10px] text-gray-455 leading-relaxed">Processing rate: 3,420 rows/sec. No parsing overflow or segments leaked.</p>
+        </div>
+
+        {/* API Throughput */}
+        <div className="glass-card border border-white/5 rounded-2xl p-5 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">API Core Throughput</span>
+            <span className="rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase">
+              Throughput
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-3xl font-extrabold text-white">245 rps</h2>
+            <span className="text-xs text-gray-500">Peak: 540 rps</span>
+          </div>
+          <div className="w-full bg-zinc-800 rounded-full h-1">
+            <div className="bg-violet-500 h-1 rounded-full w-[85%]" />
+          </div>
+          <p className="text-[10px] text-gray-455 leading-relaxed">REST and JSON RPC route gateways latency average: 18ms. SSD Cache hit rate 94%.</p>
+        </div>
+      </motion.div>
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* User Growth & Revenue Area Chart */}

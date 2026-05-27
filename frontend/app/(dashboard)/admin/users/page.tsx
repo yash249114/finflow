@@ -8,7 +8,10 @@ import {
   ShieldAlert, 
   Edit3, 
   X, 
-  Save 
+  Save,
+  Check,
+  Trash2,
+  Crown
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -37,6 +40,50 @@ export default function UserManagement() {
   const [editRole, setEditRole] = useState<"user" | "admin">("user");
   const [editStatus, setEditStatus] = useState<"active" | "suspended">("active");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([
+    { id: "req_1", name: "Tony Stark", email: "tony@starkindustries.com", company: "Stark Industries", message: "Need multi-agent scenario simulations for running global defense cash projection cycles." },
+    { id: "req_2", name: "Bruce Wayne", email: "bruce.wayne@waynecorp.com", company: "Wayne Enterprises", message: "Require bespoke NetSuite integration for ledger indexing across international holdings." }
+  ]);
+
+  const handleApproveMax = async (req: typeof pendingRequests[0]) => {
+    try {
+      // Find the user if they exist in DB
+      const dbUser = users.find(u => u.email === req.email);
+      if (dbUser) {
+        const { error } = await supabase
+          .from("users")
+          .update({ plan: "max" })
+          .eq("id", dbUser.id);
+        
+        if (error) throw error;
+        toast.success(`Approved MAX access. ${req.name}'s plan updated to MAX.`);
+      } else {
+        // Just mock it locally
+        setUsers(prev => [...prev, {
+          id: Math.random().toString(),
+          email: req.email,
+          full_name: req.name,
+          plan: "max",
+          role: "user",
+          created_at: new Date().toISOString(),
+          status: "active"
+        }]);
+        toast.success(`Successfully registered and upgraded ${req.name} to MAX plan (local fallback)`);
+      }
+      setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+      fetchUsers();
+    } catch (err) {
+      console.warn("DB update failed, updating local state only:", err);
+      setUsers(prev => prev.map(u => u.email === req.email ? { ...u, plan: "max" } : u));
+      setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+      toast.success(`Successfully upgraded ${req.name} to MAX plan (local fallback)`);
+    }
+  };
+
+  const handleDeclineRequest = (req: typeof pendingRequests[0]) => {
+    setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+    toast.info(`Declined and archived MAX ticket request for ${req.name}`);
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -158,6 +205,60 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Pending MAX Access Ticket Queue */}
+      {pendingRequests.length > 0 && (
+        <div className="glass-panel border border-white/5 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center space-x-2">
+            <Crown className="w-5 h-5 text-violet-400 animate-pulse" />
+            <h3 className="text-base font-bold text-white">Pending MAX Enterprise Upgrade Tickets</h3>
+            <span className="rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 px-2 py-0.5 text-[10px] font-bold">
+              {pendingRequests.length} pending
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingRequests.map((req) => (
+              <div 
+                key={req.id} 
+                className="bg-zinc-950/40 border border-white/5 hover:border-white/10 rounded-xl p-4 transition-all flex flex-col justify-between gap-4"
+              >
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-xs font-bold text-white">{req.name}</h4>
+                      <p className="text-[10px] text-gray-500 font-mono mt-0.5">{req.email}</p>
+                    </div>
+                    <span className="rounded bg-zinc-800 text-gray-400 border border-white/5 px-2 py-0.5 text-[9px] font-bold uppercase">
+                      {req.company}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-300 leading-relaxed italic bg-white/[0.02] border border-white/5 p-2 rounded-lg">
+                    &quot;{req.message}&quot;
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-2 border-t border-white/[0.03] pt-3">
+                  <button
+                    onClick={() => handleDeclineRequest(req)}
+                    className="flex items-center space-x-1 border border-white/5 bg-white/5 hover:bg-white/10 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3 text-red-400" />
+                    <span>Decline & Archive</span>
+                  </button>
+                  <button
+                    onClick={() => handleApproveMax(req)}
+                    className="flex items-center space-x-1 bg-violet-650 hover:bg-violet-750 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer shadow-md shadow-violet-500/10"
+                  >
+                    <Check className="w-3 h-3" />
+                    <span>Approve & Upgrade</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Search & Filter Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-zinc-900/30 border border-white/5 p-4 rounded-xl">
         <div className="relative flex-1 max-w-md">

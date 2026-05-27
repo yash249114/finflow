@@ -173,11 +173,27 @@ export default function UserDropdown({ open, onClose }: UserDropdownProps) {
               </div>
             )}
 
+            {/* Enterprise Upgrade Button */}
+            {user?.plan !== 'max' && (
+              <div className="px-4 py-3 border-t border-white/[0.04] bg-white/[0.01]">
+                <button
+                  onClick={() => {
+                    onClose();
+                    window.dispatchEvent(new CustomEvent('open-max-waitlist'));
+                  }}
+                  className="w-full bg-gradient-to-r from-indigo-650 to-violet-650 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-bold rounded-xl py-2 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/15 cursor-pointer"
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  <span>Unlock MAX Enterprise</span>
+                </button>
+              </div>
+            )}
+
             {/* Logout */}
             <div className="border-t border-white/[0.04] py-1.5">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-danger/80 hover:text-danger hover:bg-danger/5 transition-colors"
+                className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-danger/80 hover:text-danger hover:bg-danger/5 transition-colors cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Log Out</span>

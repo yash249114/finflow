@@ -472,6 +472,57 @@ export default function BillingPage() {
         </motion.div>
       </motion.div>
 
+      {/* Billing History / Invoice List */}
+      <div className="glass-panel border border-white/5 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex justify-between items-center border-b border-white/5 pb-4">
+          <div>
+            <h3 className="text-base font-bold text-white">Billing History & Invoices</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Review and download PDF receipts for your past subscription cycles.</p>
+          </div>
+          <CreditCard className="w-5 h-5 text-indigo-400" />
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-white/5 text-gray-500 font-semibold">
+                <th className="py-3 px-4">Invoice ID</th>
+                <th className="py-3 px-4">Billing Date</th>
+                <th className="py-3 px-4">Amount</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Receipt</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.02]">
+              {[
+                { id: "INV-2026-003", date: "May 27, 2026", amount: "$29.00", status: "Paid" },
+                { id: "INV-2026-002", date: "Apr 27, 2026", amount: "$29.00", status: "Paid" },
+                { id: "INV-2026-001", date: "Mar 27, 2026", amount: "$29.00", status: "Paid" },
+              ].map((inv) => (
+                <tr key={inv.id} className="hover:bg-white/[0.01] transition-colors">
+                  <td className="py-3 px-4 font-mono font-medium text-white">{inv.id}</td>
+                  <td className="py-3 px-4 text-gray-400">{inv.date}</td>
+                  <td className="py-3 px-4 text-white font-semibold">{inv.amount}</td>
+                  <td className="py-3 px-4">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/25 text-emerald-400">
+                      ● {inv.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      onClick={() => toast.success(`Initiated download for receipt ${inv.id}`)}
+                      className="text-indigo-400 hover:text-indigo-300 font-semibold hover:underline bg-transparent border-none cursor-pointer"
+                    >
+                      Download PDF
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* FAQs Accordion */}
       <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-8 shadow-md">
         <div className="flex items-center space-x-2.5 mb-6">

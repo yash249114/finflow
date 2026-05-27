@@ -57,6 +57,31 @@ func (r *TransactionRepo) BatchInsert(ctx context.Context, userID string, rows [
 	return inserted, nil
 }
 
+// BulkCopyInsert inserts multiple transactions using pgx CopyFrom protocol for high performance.
+func (r *TransactionRepo) BulkCopyInsert(ctx context.Context, userID string, rows []ParsedRow) (int, error) {
+	if len(rows) == 0 {
+		return 0, nil
+	}
+
+	// We cast ParsedRow to appropriate fields for database schema COPY
+	rowsInput := make([][]interface{}, len(rows))
+	for i, r := range rows {
+		rowsInput[i] = []interface{}{userID, r.Date, r.Description, r.Amount, r.Category, r.Source}
+	}
+
+	inserted, err := r.pool.CopyFrom(
+		ctx,
+		pgx.Identifier{"transactions"},
+		[]string{"user_id", "date", "description", "amount", "category", "source"},
+		pgx.CopyFromRows(rowsInput),
+	)
+	if err != nil {
+		return 0, fmt.Errorf("bulk copy insertion failed: %w", err)
+	}
+
+	return int(inserted), nil
+}
+
 // List retrieves paginated transactions for a user with optional filters.
 func (r *TransactionRepo) List(ctx context.Context, userID string, startDate, endDate, category string, page, limit int) ([]models.Transaction, int, error) {
 	// Build WHERE clause dynamically

@@ -119,6 +119,9 @@ func main() {
 
 		// Transactions
 		protected.POST("/transactions/upload", uploadHandler.Upload)
+		protected.POST("/transactions/upload/start", uploadHandler.StartUpload)
+		protected.POST("/transactions/upload/chunk", uploadHandler.UploadChunk)
+		protected.GET("/transactions/upload/status", uploadHandler.UploadStatus)
 		protected.GET("/transactions", txHandler.List)
 		protected.GET("/transactions/summary", txHandler.Summary)
 
