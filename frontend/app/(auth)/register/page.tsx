@@ -244,26 +244,17 @@ export default function RegisterPage() {
 
       toast.success("Account created successfully! Please check your email to verify your account.");
 
-      // Fire-and-forget welcome email/notification via Web3Forms
-      const web3Key = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
-      if (web3Key) {
-        fetch("https://api.web3forms.com/submit", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: JSON.stringify({
-            access_key: web3Key,
-            subject: "Welcome to FinFlow!",
-            name: fullName,
-            email: email,
-            message: "Welcome to FinFlow! Your account has been created. Start by uploading your first CSV transaction export.",
-          }),
-        }).catch(() => {
-          // Silently ignore mail errors
-        });
-      }
+      // Fire-and-forget verification email via Resend
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          type: "verification"
+        })
+      }).catch((err) => {
+        console.error("[Register Debug] Failed to send verification email:", err);
+      });
 
       // Redirect to login page so they can sign in and obtain fresh session cookies
       console.log("[Register Debug] Redirecting to /login after signup");

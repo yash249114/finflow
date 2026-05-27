@@ -15,9 +15,12 @@ cp frontend/.env.example frontend/.env.local
 ### Required Variables
 - `NEXT_PUBLIC_SUPABASE_URL`: The API URL of your Supabase project (e.g. `https://your-project.supabase.co`).
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: The anonymous public client token for Supabase.
+- `SUPABASE_SERVICE_ROLE_KEY`: The Supabase private service role key used to programmatically generate verification and reset links securely on the server (never expose to the frontend).
 - `NEXT_PUBLIC_APP_URL`: The URL of your frontend application (e.g. `http://localhost:3000` locally, or `https://finflow-ashy-six.vercel.app` in production).
 - `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`: Google reCAPTCHA v2 Checkbox public site key.
 - `RECAPTCHA_SECRET_KEY`: Google reCAPTCHA v2 Checkbox private secret key (never expose to the frontend).
+- `RESEND_API_KEY`: Your Resend API key for dispatching transactional onboarding, email verification, and recovery links.
+- `EMAIL_FROM`: The verified sender address (e.g., `FinFlow <onboarding@resend.dev>` or your custom verified domain address).
 
 ---
 

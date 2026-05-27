@@ -147,6 +147,58 @@ function LoginForm() {
     }
   };
 
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email address first in the email field.");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: email, type: "reset-password" }),
+      });
+      
+      if (res.ok) {
+        toast.success("Password recovery link has been sent to your email!");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to send password recovery email.");
+      }
+    } catch (err) {
+      console.error("[Login Debug] Forgot password error:", err);
+      toast.error("Failed to send password recovery email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: email, type: "verification" }),
+      });
+      if (res.ok) {
+        toast.success("A fresh verification link has been sent to your email!");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to send verification link.");
+      }
+    } catch (err) {
+      console.error("[Login Debug] Resend verification error:", err);
+      toast.error("Failed to send verification link.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -231,25 +283,18 @@ function LoginForm() {
 
       toast.success("Welcome back to FinFlow!");
 
-      // Fire-and-forget welcome notification/email via Web3Forms
-      const web3Key = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
-      if (web3Key) {
-        fetch("https://api.web3forms.com/submit", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: JSON.stringify({
-            access_key: web3Key,
-            subject: "FinFlow — User Login",
-            email: email,
-            message: `User logged in: ${email}`,
-          }),
-        }).catch(() => {
-          // Silently ignore email dispatch errors
-        });
-      }
+      // Fire-and-forget onboarding/welcome email via Resend
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          type: "welcome",
+          fullName: data.session?.user?.user_metadata?.full_name || "User"
+        })
+      }).catch(() => {
+        // Silently ignore email dispatch errors
+      });
 
       const rawFrom = searchParams.get("from");
       console.log(`[Login Debug] Successful session confirmed. Initiating redirect delay. rawFrom=[${rawFrom}], targetPath=[/dashboard]`);
@@ -366,7 +411,7 @@ function LoginForm() {
                 </label>
                 <Link
                   href="#"
-                  onClick={() => toast.info("Password recovery is not configured yet")}
+                  onClick={handleForgotPassword}
                   className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
                 >
                   Forgot password?
@@ -399,9 +444,20 @@ function LoginForm() {
             )}
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-3 flex items-start space-x-2 text-xs">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{error}</span>
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-3 flex flex-col space-y-2 text-xs">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+                {error.toLowerCase().includes("not verified yet") && (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    className="text-left text-xs font-semibold text-indigo-400 hover:text-indigo-300 underline pl-6 transition-colors"
+                  >
+                    Resend verification link
+                  </button>
+                )}
               </div>
             )}
 
