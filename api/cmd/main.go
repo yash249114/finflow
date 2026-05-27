@@ -112,7 +112,7 @@ func main() {
 
 	// ── Protected routes ─────────────────────────────────
 	protected := r.Group("/api/v1")
-	protected.Use(middleware.Auth(jwtSvc))
+	protected.Use(middleware.Auth(jwtSvc, userRepo))
 	{
 		// User
 		protected.GET("/auth/me", authHandler.Me)

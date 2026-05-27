@@ -5,7 +5,7 @@ import {
   useState, useCallback, useRef
 } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from './supabase'
 
 interface User {
   id: string
@@ -29,13 +29,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const hasFetched = useRef(false)
-
-  // Use fallback dummy values during next build/static generation
-  const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
-  const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '')
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
-
-  const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
 
   const fetchUser = useCallback(async () => {
     // If using placeholder variables (e.g. at build time), skip fetch
@@ -70,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   const refetch = useCallback(async () => {
     console.log("[AuthContext Debug] Requesting manual context refetch...")
@@ -109,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [fetchUser, supabase])
+  }, [fetchUser])
 
   const logout = useCallback(async () => {
     try {
@@ -123,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       hasFetched.current = false
       router.push('/login')
     }
-  }, [router, supabase])
+  }, [router])
 
   return (
     <AuthContext.Provider value={{

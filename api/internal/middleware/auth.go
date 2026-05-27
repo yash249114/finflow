@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/finflow/api/internal/db"
 	"github.com/finflow/api/internal/services/jwt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 // Auth creates middleware that validates JWT access tokens from cookies or Authorization header.
-func Auth(jwtService *jwt.Service) gin.HandlerFunc {
+func Auth(jwtService *jwt.Service, userRepo *db.UserRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var tokenString string
 
@@ -40,10 +41,28 @@ func Auth(jwtService *jwt.Service) gin.HandlerFunc {
 			return
 		}
 
+		userID := claims.UserID
+		if userID == "" && claims.Subject != "" {
+			userID = claims.Subject
+		}
+
+		if userID == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid user id in token"})
+			return
+		}
+
+		// Look up user in database to get plan and other profile details
+		user, err := userRepo.GetByID(c.Request.Context(), userID)
+		if err != nil || user == nil {
+			log.Warn().Err(err).Str("user_id", userID).Msg("user profile not found in db")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user profile not found in database"})
+			return
+		}
+
 		// Attach user info to context for downstream handlers
-		c.Set("user_id", claims.UserID)
-		c.Set("email", claims.Email)
-		c.Set("plan", claims.Plan)
+		c.Set("user_id", user.ID)
+		c.Set("email", user.Email)
+		c.Set("plan", user.Plan)
 
 		c.Next()
 	}

@@ -32,6 +32,7 @@ import AmountBadge from "@/components/ui/amount-badge";
 import CategoryBadge from "@/components/ui/category-badge";
 
 import { useAuth } from "@/lib/auth-context";
+import { getAuthHeaders } from "@/lib/supabase";
 
 interface CategorySummary {
   category: string;
@@ -83,16 +84,18 @@ export default function DashboardPage() {
       setError(null);
 
       try {
+        const authHeaders = await getAuthHeaders();
+
         // 1. Fetch summary & transactions in parallel
         const [summaryRes, txRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/transactions/summary`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             credentials: "include",
           }),
           fetch(`${API_URL}/api/v1/transactions?limit=100`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             credentials: "include",
           }),
         ]);
@@ -114,7 +117,7 @@ export default function DashboardPage() {
           try {
             const forecastRes = await fetch(`${API_URL}/api/v1/forecast?horizon=30`, {
               method: "GET",
-              headers: { "Content-Type": "application/json" },
+              headers: authHeaders,
               credentials: "include",
             });
             if (forecastRes.ok) {

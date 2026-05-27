@@ -6,6 +6,7 @@ import { Check, X, Sparkles, Lock, CreditCard, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useAuth } from "@/lib/auth-context";
+import { getAuthHeaders } from "@/lib/supabase";
 
 export default function BillingPage() {
   const searchParams = useSearchParams();
@@ -47,9 +48,10 @@ export default function BillingPage() {
   const handleUpgrade = async () => {
     setCheckoutLoading(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch(`${API_URL}/api/v1/billing/create-checkout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         credentials: "include",
       });
 
@@ -74,9 +76,10 @@ export default function BillingPage() {
   const handleManagePortal = async () => {
     setPortalLoading(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch(`${API_URL}/api/v1/billing/portal`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         credentials: "include",
       });
 

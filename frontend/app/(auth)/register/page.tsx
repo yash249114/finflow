@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import BackButton from "@/components/ui/back-button";
+import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -52,8 +53,6 @@ export default function RegisterPage() {
     }
   }, [password]);
 
-  const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password || !confirmPassword) return;
@@ -77,44 +76,58 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password, full_name: fullName }),
+      console.log("[Register Debug] Initiating signUp call to Supabase for email:", email);
+      const { data, error: apiError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            plan: 'free',
+          }
+        }
       });
 
-      if (res.ok) {
-        toast.success("Account created successfully!");
+      console.log("[Register Debug] signUp response:", {
+        success: !apiError,
+        hasUser: !!data?.user,
+        userEmail: data?.user?.email,
+        error: apiError?.message
+      });
 
-        // Fire-and-forget welcome email/notification via Web3Forms
-        const web3Key = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
-        if (web3Key) {
-          fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              access_key: web3Key,
-              subject: "Welcome to FinFlow!",
-              name: fullName,
-              email: email,
-              message: "Welcome to FinFlow! Your account has been created. Start by uploading your first CSV transaction export.",
-            }),
-          }).catch(() => {
-            // Silently ignore mail errors
-          });
-        }
-
-        // Automatic signin or login redirect
-        router.push("/login");
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setError(errData.error || "Failed to create account. Email might already exist.");
+      if (apiError) {
+        setError(apiError.message);
+        return;
       }
-    } catch {
+
+      toast.success("Account created successfully!");
+
+      // Fire-and-forget welcome email/notification via Web3Forms
+      const web3Key = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+      if (web3Key) {
+        fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            access_key: web3Key,
+            subject: "Welcome to FinFlow!",
+            name: fullName,
+            email: email,
+            message: "Welcome to FinFlow! Your account has been created. Start by uploading your first CSV transaction export.",
+          }),
+        }).catch(() => {
+          // Silently ignore mail errors
+        });
+      }
+
+      // Redirect to login page so they can sign in and obtain fresh session cookies
+      console.log("[Register Debug] Redirecting to /login after signup");
+      router.push("/login");
+    } catch (err) {
+      console.error("[Register Debug] Signup handler error:", err);
       setError("Unable to connect to registration services.");
     } finally {
       setLoading(false);

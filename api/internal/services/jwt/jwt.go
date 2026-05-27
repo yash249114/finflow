@@ -84,6 +84,11 @@ func (s *Service) ValidateAccessToken(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid token claims")
 	}
 
+	// Map Supabase Subject (sub) to UserID if user_id claim is empty
+	if claims.UserID == "" && claims.Subject != "" {
+		claims.UserID = claims.Subject
+	}
+
 	return claims, nil
 }
 

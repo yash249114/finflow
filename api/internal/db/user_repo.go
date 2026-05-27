@@ -22,14 +22,14 @@ func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 }
 
 // Create inserts a new user and returns it.
-func (r *UserRepo) Create(ctx context.Context, email, passwordHash, fullName string) (*models.User, error) {
+func (r *UserRepo) Create(ctx context.Context, id, email, fullName string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`INSERT INTO users (email, password_hash, full_name)
+		`INSERT INTO users (id, email, full_name)
 		 VALUES ($1, $2, $3)
-		 RETURNING id, email, password_hash, full_name, plan, lemonsqueezy_customer_id, created_at`,
-		email, passwordHash, fullName,
-	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName,
+		 RETURNING id, email, full_name, plan, lemonsqueezy_customer_id, created_at`,
+		id, email, fullName,
+	).Scan(&user.ID, &user.Email, &user.FullName,
 		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("inserting user: %w", err)
@@ -41,10 +41,10 @@ func (r *UserRepo) Create(ctx context.Context, email, passwordHash, fullName str
 func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, full_name, plan, lemonsqueezy_customer_id, created_at
+		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
 		 FROM users WHERE email = $1`,
 		email,
-	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName,
+	).Scan(&user.ID, &user.Email, &user.FullName,
 		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -59,10 +59,10 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, full_name, plan, lemonsqueezy_customer_id, created_at
+		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
 		 FROM users WHERE id = $1`,
 		id,
-	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName,
+	).Scan(&user.ID, &user.Email, &user.FullName,
 		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -101,10 +101,10 @@ func (r *UserRepo) UpdateLemonSqueezyCustomerID(ctx context.Context, userID, cus
 func (r *UserRepo) GetByLemonSqueezyCustomerID(ctx context.Context, customerID string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, full_name, plan, lemonsqueezy_customer_id, created_at
+		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
 		 FROM users WHERE lemonsqueezy_customer_id = $1`,
 		customerID,
-	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName,
+	).Scan(&user.ID, &user.Email, &user.FullName,
 		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

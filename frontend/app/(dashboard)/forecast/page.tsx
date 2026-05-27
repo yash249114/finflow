@@ -24,6 +24,7 @@ import {
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import AmountBadge from "@/components/ui/amount-badge";
 import { useAuth } from "@/lib/auth-context";
+import { getAuthHeaders } from "@/lib/supabase";
 
 interface ForecastPoint {
   date: string;
@@ -73,9 +74,10 @@ export default function ForecastPage() {
         setLoading(true);
         setError(null);
         try {
+          const authHeaders = await getAuthHeaders();
           const txRes = await fetch(`${API_URL}/api/v1/transactions?limit=100`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             credentials: "include",
           });
           if (txRes.ok) {
@@ -102,9 +104,10 @@ export default function ForecastPage() {
       setForecastLoading(true);
       const startFetch = Date.now();
       try {
+        const authHeaders = await getAuthHeaders();
         const res = await fetch(`${API_URL}/api/v1/forecast?horizon=${horizon}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           credentials: "include",
         });
 

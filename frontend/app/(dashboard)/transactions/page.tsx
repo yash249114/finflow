@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AmountBadge from "@/components/ui/amount-badge";
 import CategoryBadge from "@/components/ui/category-badge";
+import { getAuthHeaders } from "@/lib/supabase";
 
 interface Transaction {
   id: string;
@@ -101,9 +102,10 @@ export default function TransactionsPage() {
     if (activeFilters.category) params.append("category", activeFilters.category);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch(`${API_URL}/api/v1/transactions?${params.toString()}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         credentials: "include",
       });
 
@@ -218,8 +220,10 @@ export default function TransactionsPage() {
 
       setUploadProgress(50);
 
+      const authHeaders = await getAuthHeaders(null); // do not set Content-Type for FormData
       const res = await fetch(`${API_URL}/api/v1/transactions/upload`, {
         method: "POST",
+        headers: authHeaders,
         credentials: "include",
         body: formData,
       });

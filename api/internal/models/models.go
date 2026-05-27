@@ -6,13 +6,12 @@ import "time"
 // ─── Users ────────────────────────────────────────────────
 
 type User struct {
-	ID               string    `json:"id"`
-	Email            string    `json:"email"`
-	PasswordHash     string    `json:"-"`
-	FullName         string    `json:"full_name"`
-	Plan                     string    `json:"plan"`
-	LemonSqueezyCustomerID   *string   `json:"lemonsqueezy_customer_id,omitempty"`
-	CreatedAt                time.Time `json:"created_at"`
+	ID                     string    `json:"id"`
+	Email                  string    `json:"email"`
+	FullName               string    `json:"full_name"`
+	Plan                   string    `json:"plan"`
+	LemonSqueezyCustomerID *string   `json:"lemonsqueezy_customer_id,omitempty"`
+	CreatedAt              time.Time `json:"created_at"`
 }
 
 type RegisterRequest struct {
