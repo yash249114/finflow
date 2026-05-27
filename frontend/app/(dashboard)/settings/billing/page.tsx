@@ -2,11 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, X, Sparkles, Lock, CreditCard, HelpCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, X, Sparkles, Lock, CreditCard, HelpCircle, ArrowRight, Star, Send } from "lucide-react";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useAuth } from "@/lib/auth-context";
 import { getAuthHeaders } from "@/lib/supabase";
+import { detectUserCurrency, CURRENCIES, formatPrice, type CurrencyCode } from "@/lib/currency";
+import { CursorGlow } from "@/components/ui/cursor-glow";
+import { fadeSlideUp, staggerContainer, scaleIn } from "@/lib/motion";
 
 export default function BillingPage() {
   const searchParams = useSearchParams();
@@ -16,12 +20,24 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Currency detection
+  const [currencyCode, setCurrencyCode] = useState<CurrencyCode>("USD");
+  
+  // Max request modal state
+  const [isMaxModalOpen, setIsMaxModalOpen] = useState(false);
+  const [maxRequestMessage, setMaxRequestMessage] = useState("");
+  const [submittingMaxRequest, setSubmittingMaxRequest] = useState(false);
+
   // Accordion state
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
   useEffect(() => {
+    // Detect currency
+    const detected = detectUserCurrency();
+    setCurrencyCode(detected);
+
     const fetchUser = async () => {
       setLoading(true);
       try {
@@ -100,6 +116,22 @@ export default function BillingPage() {
     }
   };
 
+  const handleMaxRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!maxRequestMessage.trim()) {
+      toast.error("Please enter a short description of your organization/needs");
+      return;
+    }
+    setSubmittingMaxRequest(true);
+    // Simulate API request
+    setTimeout(() => {
+      setSubmittingMaxRequest(false);
+      setIsMaxModalOpen(false);
+      setMaxRequestMessage("");
+      toast.success("Your inquiry for FinFlow MAX has been sent! Our team will contact you shortly.");
+    }, 1500);
+  };
+
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
@@ -117,21 +149,26 @@ export default function BillingPage() {
       q: "Is my payment information secure?",
       a: "Absolutely. All payment processing, merchant details, and billing security are handled entirely by Lemon Squeezy (an industry standard Merchant of Record). FinFlow never stores your card information.",
     },
+    {
+      q: "How does Regional Pricing work?",
+      a: "FinFlow automatically adjusts its Pro plan rate based on your geography to keep our AI tools accessible worldwide. We support USD, INR, EUR, and GBP.",
+    },
   ];
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-96 items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
-  const plan = user?.plan || "free";
+  const currencyConfig = CURRENCIES[currencyCode];
+  const userPlan = user?.plan || "free";
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto relative select-none">
-      {/* Confetti container (10 falling divs) */}
+    <div className="space-y-12 max-w-6xl mx-auto relative select-none">
+      {/* Confetti container (15 falling divs) */}
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden h-[100vh]">
           {[...Array(15)].map((_, i) => {
@@ -162,227 +199,409 @@ export default function BillingPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Billing & Plans</h1>
-          <p className="text-sm text-text-muted mt-1">
-            Manage your subscription tier and payment checkouts
+          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center">
+            Billing & Subscriptions
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Choose a plan that fits your growth or manage your current subscription
           </p>
         </div>
-        {plan === "pro" ? (
-          <span className="rounded-full bg-success/15 border border-success/30 px-3 py-1 text-xs font-semibold text-success flex items-center space-x-1 uppercase tracking-wider">
-            <Sparkles className="h-3.5 w-3.5 mr-1" /> Pro Plan
+        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+          <span className="text-xs text-gray-400">Regional Currency:</span>
+          <select
+            value={currencyCode}
+            onChange={(e) => setCurrencyCode(e.target.value as CurrencyCode)}
+            className="bg-zinc-900/80 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
+          >
+            {Object.values(CURRENCIES).map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+            userPlan === "pro" 
+              ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-400" 
+              : userPlan === "max"
+              ? "bg-violet-500/10 border border-violet-500/30 text-violet-400"
+              : "bg-zinc-800 border border-zinc-700 text-gray-400"
+          }`}>
+            Current: {userPlan} Plan
           </span>
-        ) : (
-          <span className="rounded-full bg-gray-800 border border-gray-700 px-3 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
-            Free Plan
-          </span>
-        )}
+        </div>
       </div>
 
-      {/* RENDER BILLING DETAIL */}
-      {plan === "free" ? (
-        <div className="space-y-12">
-          {/* Plan Comparison Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-            {/* Free Card */}
-            <div className="bg-gray-900 border-2 border-blue-500/25 rounded-2xl p-8 flex flex-col justify-between shadow-lg">
+      {/* Plans Pricing Section */}
+      <motion.div 
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch"
+      >
+        {/* FREE PLAN */}
+        <motion.div variants={fadeSlideUp}>
+          <CursorGlow className="h-full">
+            <div className={`h-full glass-card border border-white/5 rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden transition-all duration-300 ${userPlan === "free" ? 'ring-2 ring-indigo-500/30 border-indigo-500/20' : ''}`}>
+              {userPlan === "free" && (
+                <div className="absolute top-4 right-4 rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold text-gray-300 border border-white/10">
+                  Current Plan
+                </div>
+              )}
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold text-white">Free Tier</h3>
-                  <p className="text-xs text-text-muted mt-1">Current Active Plan</p>
+                  <h3 className="text-xl font-bold text-white">Free Plan</h3>
+                  <p className="text-xs text-gray-400 mt-1">For side projects and testing</p>
                 </div>
                 <div className="flex items-baseline">
                   <span className="text-4xl font-extrabold text-white">$0</span>
-                  <span className="text-text-muted ml-1">/ month</span>
+                  <span className="text-gray-400 ml-1 text-sm">/ month</span>
                 </div>
-                <ul className="space-y-3 text-xs">
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>Up to 100 transactions</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>AI transaction categorization</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>Basic dashboard & filters</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>CSV file upload dropzone</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-500">
-                    <X className="h-4 w-4 text-gray-600 shrink-0" />
-                    <span className="line-through">Cash flow forecasting</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-500">
-                    <X className="h-4 w-4 text-gray-600 shrink-0" />
-                    <span className="line-through">30/60/90 day horizons</span>
-                  </li>
-                </ul>
+                <div className="border-t border-white/5 pt-4">
+                  <ul className="space-y-3.5 text-xs text-gray-300">
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span>Up to 250 transactions</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span>CSV import upload dropzone</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span>ML transaction categorization</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span>Lightweight local AI analysis</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5 text-gray-500">
+                      <X className="h-4 w-4 text-gray-600 shrink-0 mt-0.5" />
+                      <span className="line-through">Advanced forecasting & runway projections</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5 text-gray-500">
+                      <X className="h-4 w-4 text-gray-600 shrink-0 mt-0.5" />
+                      <span className="line-through">AI Copilot chat interface</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-
               <div className="mt-8">
                 <button
                   disabled
-                  className="w-full rounded-xl bg-gray-800 border border-gray-750 text-text-muted py-3 text-xs font-semibold cursor-not-allowed select-none"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 text-gray-400 py-3 text-xs font-semibold cursor-not-allowed select-none transition-colors"
                 >
-                  Active Plan
+                  {userPlan === "free" ? "Active" : "Downgrade Unavailable"}
                 </button>
               </div>
             </div>
+          </CursorGlow>
+        </motion.div>
 
-            {/* Pro Card */}
-            <div className="bg-gradient-to-b from-blue-500/5 to-transparent border-2 border-blue-500 rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
-              <div className="absolute top-4 right-4 rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-semibold text-blue-400 border border-blue-500/20">
-                Most Popular
+        {/* PRO PLAN */}
+        <motion.div variants={fadeSlideUp}>
+          <CursorGlow className="h-full">
+            <div className={`h-full glass-card border rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden transition-all duration-300 ${
+              userPlan === "pro" 
+                ? 'ring-2 ring-indigo-500 border-indigo-500/50' 
+                : 'border-indigo-500/20 hover:border-indigo-500/40'
+            }`}>
+              <div className="absolute top-4 right-4 rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
+                <Star className="w-3 h-3 fill-indigo-400/20" /> Most Popular
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold text-white">Pro Plan</h3>
-                  <p className="text-xs text-text-muted mt-1">Unlock advanced prediction algorithms</p>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-1.5">
+                    Pro Plan <Sparkles className="w-4 h-4 text-indigo-400" />
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1">Runway modeling & smart anomalies</p>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-extrabold text-white">$19</span>
-                  <span className="text-text-muted ml-1">/ month</span>
+                  <span className="text-4xl font-extrabold text-white">
+                    {formatPrice(currencyConfig.plans.pro, currencyConfig)}
+                  </span>
+                  <span className="text-gray-400 ml-1 text-sm">/ month</span>
                 </div>
-                <ul className="space-y-3 text-xs">
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>Unlimited transactions</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>AI transaction categorization</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>Full dashboard access</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span>CSV file upload dropzone</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span className="font-semibold text-white">Cash flow forecasting</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-gray-300">
-                    <Check className="h-4 w-4 text-success shrink-0" />
-                    <span className="font-semibold text-white">30/60/90 day horizons</span>
-                  </li>
-                </ul>
+                <div className="border-t border-white/5 pt-4">
+                  <ul className="space-y-3.5 text-xs text-gray-300">
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+                      <span className="font-semibold text-white">Unlimited transactions</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+                      <span>Advanced forecasting (30/60/90 days)</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+                      <span>AI Copilot & scenario models</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+                      <span>Predictive burn-rate alert notifications</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+                      <span>Automated recurring anomaly scans</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               <div className="mt-8 space-y-3">
-                <button
-                  onClick={handleUpgrade}
-                  disabled={checkoutLoading}
-                  className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-xs transition-all shadow-md shadow-blue-500/25 flex items-center justify-center space-x-2"
-                >
-                  {checkoutLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" />
-                      <span>Redirecting to checkout...</span>
-                    </>
-                  ) : (
-                    "Upgrade to Pro"
-                  )}
-                </button>
-                <div className="flex items-center justify-center space-x-1.5 text-[10px] text-text-muted">
+                {userPlan === "pro" ? (
+                  <button
+                    onClick={handleManagePortal}
+                    disabled={portalLoading}
+                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2"
+                  >
+                    {portalLoading ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        <span>Connecting to Portal...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 shrink-0" />
+                        <span>Manage Subscription</span>
+                      </>
+                    )}
+                  </button>
+                ) : userPlan === "max" ? (
+                  <button
+                    disabled
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-gray-500 py-3 text-xs font-semibold cursor-not-allowed select-none"
+                  >
+                    Current Tier Higher
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleUpgrade}
+                    disabled={checkoutLoading}
+                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    {checkoutLoading ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        <span>Opening Checkout...</span>
+                      </>
+                    ) : (
+                      <span>Upgrade to Pro</span>
+                    )}
+                  </button>
+                )}
+                <div className="flex items-center justify-center space-x-1.5 text-[10px] text-gray-500">
                   <Lock className="h-3 w-3 shrink-0" />
-                  <span>Secure payment processed by Lemon Squeezy</span>
+                  <span>Secure processing via Lemon Squeezy</span>
                 </div>
               </div>
             </div>
-          </div>
+          </CursorGlow>
+        </motion.div>
 
-          {/* FAQs Accordion */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-md">
-            <div className="flex items-center space-x-2 mb-6">
-              <HelpCircle className="h-5 w-5 text-primary shrink-0" />
-              <h3 className="text-base font-bold text-white">Frequently Asked Questions</h3>
+        {/* MAX PLAN */}
+        <motion.div variants={fadeSlideUp}>
+          <CursorGlow className="h-full">
+            <div className={`h-full glass-card-elevated border rounded-2xl p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-all duration-300 ${
+              userPlan === "max" 
+                ? 'ring-2 ring-violet-500 border-violet-500/50' 
+                : 'border-violet-500/20 hover:border-violet-500/40'
+            }`}>
+              <div className="absolute top-0 right-0 h-[100px] w-[100px] bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-1.5">
+                    FinFlow Max <span className="rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase">Enterprise</span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1">Multi-agent models & custom integration</p>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
+                    Custom
+                  </span>
+                  <span className="text-gray-400 ml-1 text-sm">/ year</span>
+                </div>
+                <div className="border-t border-white/5 pt-4">
+                  <ul className="space-y-3.5 text-xs text-gray-300">
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                      <span>Dedicated Gemini 1.5 Pro AI CFO context</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                      <span>Multi-agent automated cash-flow execution</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                      <span>Tailored database & accounting software integrations</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                      <span>Custom LLM fine-tuning on company data</span>
+                    </li>
+                    <li className="flex items-start space-x-2.5">
+                      <Check className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                      <span className="font-semibold text-white">SLA-backed 1-on-1 human expert advisory</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                {userPlan === "max" ? (
+                  <button
+                    disabled
+                    className="w-full rounded-xl bg-violet-950/40 border border-violet-850 text-violet-400 py-3 text-xs font-semibold cursor-not-allowed select-none"
+                  >
+                    Active Plan
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsMaxModalOpen(true)}
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold py-3 text-xs transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Request FinFlow MAX</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
+          </CursorGlow>
+        </motion.div>
+      </motion.div>
 
-            <div className="space-y-4">
-              {faqs.map((faq, index) => {
-                const isOpen = openFaqIndex === index;
-                return (
-                  <div key={index} className="border border-gray-850 rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => toggleFaq(index)}
-                      className="w-full bg-gray-950/40 px-4 py-3 text-xs font-semibold text-left text-gray-200 hover:text-white flex justify-between items-center"
+      {/* FAQs Accordion */}
+      <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-8 shadow-md">
+        <div className="flex items-center space-x-2.5 mb-6">
+          <HelpCircle className="h-5 w-5 text-indigo-400 shrink-0" />
+          <h3 className="text-base font-bold text-white">Frequently Asked Questions</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaqIndex === index;
+            return (
+              <div 
+                key={index} 
+                className="border border-white/5 rounded-lg overflow-hidden bg-zinc-950/20 hover:border-white/10 transition-colors"
+              >
+                <button
+                  onClick={() => toggleFaq(index)}
+                  className="w-full px-5 py-4 text-xs font-semibold text-left text-gray-200 hover:text-white flex justify-between items-center focus:outline-none"
+                >
+                  <span>{faq.q}</span>
+                  <span className={`text-indigo-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                    ▼
+                  </span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
                     >
-                      <span>{faq.q}</span>
-                      <span>{isOpen ? "▲" : "▼"}</span>
-                    </button>
-                    {isOpen && (
-                      <div className="bg-gray-900 p-4 text-xs leading-relaxed text-text-muted">
+                      <div className="px-5 pb-4 text-xs leading-relaxed text-gray-400 border-t border-white/5 pt-3">
                         {faq.a}
                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* MAX REQUEST DIALOG MODAL */}
+      <AnimatePresence>
+        {isMaxModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMaxModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            {/* Modal Body */}
+            <motion.div
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="glass-card-elevated border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl z-10 relative p-8"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    Request FinFlow Max
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Please tell us about your team and custom workflow needs.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsMaxModalOpen(false)}
+                  className="text-gray-400 hover:text-white text-sm bg-white/5 hover:bg-white/10 rounded-lg p-1.5 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleMaxRequestSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                    Describe your requirements
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={maxRequestMessage}
+                    onChange={(e) => setMaxRequestMessage(e.target.value)}
+                    placeholder="E.g. We require customized connections to Netsuite, have a team of 15 members, and need automated scenario modeling tools."
+                    className="w-full input-premium rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none placeholder-gray-500"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 text-[10px] text-gray-400 bg-white/5 border border-white/5 p-3 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-violet-400 shrink-0" />
+                  <span>An account coordinator will reach out to <strong>{user?.email}</strong> within 1 business day.</span>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMaxModalOpen(false)}
+                    className="rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300 text-xs font-semibold px-4 py-2.5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingMaxRequest}
+                    className="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-indigo-500/20"
+                  >
+                    {submittingMaxRequest ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Inquiry</span>
+                        <Send className="w-3.5 h-3.5" />
+                      </>
                     )}
-                  </div>
-                );
-              })}
-            </div>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      ) : (
-        /* PRO PLAN INTERFACE */
-        <div className="space-y-8 animate-fade-in">
-          <div className="bg-gradient-to-b from-success/5 to-transparent border border-success/30 rounded-2xl p-8 space-y-6 shadow-xl">
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white flex items-center">
-                You&apos;re on Pro 🎉
-              </h3>
-              <p className="text-xs text-text-muted">
-                Premium subscription ($19 / month) is active and running.
-              </p>
-            </div>
-
-            <div className="border-t border-gray-850/50 py-4 flex flex-wrap gap-x-8 gap-y-4 text-xs font-semibold">
-              <div className="flex items-center space-x-2 text-gray-300">
-                <Check className="h-4 w-4 text-success" />
-                <span>Unlimited transaction logs</span>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-300">
-                <Check className="h-4 w-4 text-success" />
-                <span>Full prediction dashboard & charts</span>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-300">
-                <Check className="h-4 w-4 text-success" />
-                <span>Priority system support</span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 pt-2">
-              <button
-                onClick={handleManagePortal}
-                disabled={portalLoading}
-                className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 text-xs transition-all shadow-md flex items-center justify-center space-x-2"
-              >
-                {portalLoading ? (
-                  <>
-                    <LoadingSpinner size="sm" />
-                    <span>Loading portal...</span>
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="h-4 w-4 mr-1.5" />
-                    <span>Manage Subscription</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <p className="text-[10px] text-text-muted mt-2">
-              * Change your card billing information or cancel your subscription plans using the customer portal link.
-            </p>
-          </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

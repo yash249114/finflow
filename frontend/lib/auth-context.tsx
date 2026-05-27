@@ -6,12 +6,17 @@ import {
 } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from './supabase'
+import type { UserRole } from './constants'
+import { ADMIN_EMAIL } from './constants'
 
 interface User {
   id: string
   email: string
   full_name: string
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro' | 'max'
+  role: UserRole
+  avatar_url?: string
+  company_name?: string
 }
 
 interface AuthContextType {
@@ -47,12 +52,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         console.log("[AuthContext Debug] Supabase session successfully verified and confirmed:", session.user.email)
         const sbUser = session.user
-        const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro'
+        const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro' | 'max'
+        const email = sbUser.email || ''
+
+        // Determine role: check metadata first, then fallback to admin email check
+        let role: UserRole = 'user'
+        if (sbUser.user_metadata?.role === 'admin' || email === ADMIN_EMAIL) {
+          role = 'admin'
+        }
+
         setUser({
           id: sbUser.id,
-          email: sbUser.email || '',
+          email,
           full_name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
-          plan
+          plan,
+          role,
+          avatar_url: sbUser.user_metadata?.avatar_url,
+          company_name: sbUser.user_metadata?.company_name,
         })
       } else {
         console.log("[AuthContext Debug] No active session retrieved from getSession()")
@@ -85,12 +101,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log(`[AuthContext Debug] onAuthStateChange event received [${event}]:`, session?.user?.email)
         if (session) {
           const sbUser = session.user
-          const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro'
+          const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro' | 'max'
+          const email = sbUser.email || ''
+
+          let role: UserRole = 'user'
+          if (sbUser.user_metadata?.role === 'admin' || email === ADMIN_EMAIL) {
+            role = 'admin'
+          }
+
           setUser({
             id: sbUser.id,
-            email: sbUser.email || '',
+            email,
             full_name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
-            plan
+            plan,
+            role,
+            avatar_url: sbUser.user_metadata?.avatar_url,
+            company_name: sbUser.user_metadata?.company_name,
           })
         } else {
           setUser(null)

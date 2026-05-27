@@ -272,12 +272,17 @@ function LoginForm() {
 
       if (data.session) {
         const sbUser = data.session.user;
-        const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro';
+        const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro' | 'max';
+        const emailVal = sbUser.email || '';
+        const role = (sbUser.user_metadata?.role === 'admin' || emailVal === 'yaswanthrajmouli14@gmail.com') ? 'admin' as const : 'user' as const;
         setUser({
           id: sbUser.id,
-          email: sbUser.email || '',
+          email: emailVal,
           full_name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
-          plan
+          plan,
+          role,
+          avatar_url: sbUser.user_metadata?.avatar_url,
+          company_name: sbUser.user_metadata?.company_name
         });
       }
 

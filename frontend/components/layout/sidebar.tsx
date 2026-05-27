@@ -3,98 +3,132 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, TrendingUp, CreditCard, LogOut } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  TrendingUp,
+  Sparkles,
+} from "lucide-react";
 import Logo from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth-context";
 
+const navLinks = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
+  {
+    name: "Forecast",
+    href: "/forecast",
+    icon: TrendingUp,
+    gated: "pro" as const,
+  },
+  {
+    name: "AI Copilot",
+    href: "/copilot",
+    icon: Sparkles,
+    gated: "pro" as const,
+    isAI: true,
+  },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-  };
-
+  const { user } = useAuth();
   const plan = user?.plan || "free";
 
-  const links = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
-    { name: "Forecast", href: "/forecast", icon: TrendingUp, showBadge: plan === "free" },
-    { name: "Settings/Billing", href: "/settings/billing", icon: CreditCard },
-  ];
-
   return (
-    <div className="flex h-full w-[240px] flex-col border-r border-[#1D1E22] bg-[#08090A] text-gray-300 select-none">
-      {/* Top logo */}
-      <div className="flex h-14 items-center border-b border-[#1D1E22] px-6">
-        <Link href="/dashboard" className="flex items-center space-x-2">
+    <div className="flex h-full w-[220px] flex-col bg-[#0A0A0E] text-gray-300 select-none border-r border-white/[0.04]">
+      {/* Logo */}
+      <div className="flex h-14 items-center px-5 shrink-0">
+        <Link href="/dashboard" className="flex items-center space-x-2.5 group">
           <Logo size={20} glow />
-          <span className="text-lg font-bold tracking-tight text-text-primary">
+          <span className="text-base font-bold tracking-tight text-white">
             FinFlow
           </span>
         </Link>
       </div>
 
-      {/* Nav Links */}
-      <nav className="flex-1 space-y-1 p-4">
-        {links.map((link) => {
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {navLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href || pathname?.startsWith(link.href + "/");
+          const isActive =
+            pathname === link.href ||
+            pathname?.startsWith(link.href + "/");
+          const needsUpgrade =
+            link.gated && plan === "free";
 
           return (
             <Link
               key={link.name}
               href={link.href}
-              className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all ${
+              className={`relative flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13px] font-medium transition-all duration-200 group ${
                 isActive
-                  ? "bg-primary/10 text-primary border-l-2 border-primary"
-                  : "text-gray-400 hover:bg-gray-850 hover:text-text-primary"
+                  ? "text-white bg-white/[0.06] nav-active-pill"
+                  : "text-text-muted hover:text-white hover:bg-white/[0.03]"
               }`}
             >
               <div className="flex items-center space-x-3">
-                <Icon className="h-5 w-5" />
+                <Icon
+                  className={`h-[18px] w-[18px] transition-colors ${
+                    isActive
+                      ? "text-neural-blue"
+                      : link.isAI
+                      ? "text-neural-violet group-hover:text-neural-violet"
+                      : "text-text-muted group-hover:text-white"
+                  }`}
+                />
                 <span>{link.name}</span>
               </div>
-              {link.showBadge && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
+
+              {needsUpgrade && (
+                <span className="rounded-full bg-neural-blue/10 px-1.5 py-0.5 text-[9px] font-bold text-neural-blue border border-neural-blue/20 uppercase tracking-wider">
                   Pro
                 </span>
+              )}
+
+              {link.isAI && isActive && (
+                <motion.div
+                  className="absolute right-3 h-1.5 w-1.5 rounded-full bg-neural-violet"
+                  animate={{
+                    scale: [1, 1.4, 1],
+                    opacity: [0.6, 1, 0.6],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom Profile Section */}
-      {user && (
-        <div className="border-t border-[#1D1E22] p-4">
+      {/* Bottom: Plan indicator */}
+      <div className="px-3 pb-4">
+        <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white uppercase">
-                {user.full_name.charAt(0)}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-text-primary">
-                  {user.full_name}
-                </p>
-                <div className="flex items-center space-x-1.5 mt-0.5">
-                  <span className="truncate text-xs text-text-muted capitalize">
-                    {user.plan} Plan
-                  </span>
-                </div>
-              </div>
+            <div>
+              <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+                Current Plan
+              </p>
+              <p className="text-sm font-bold text-white capitalize mt-0.5">
+                {plan === "free" ? "Free" : plan === "pro" ? "Pro" : "MAX"}
+              </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="rounded-lg p-2 text-text-muted hover:bg-gray-800 hover:text-danger transition-colors"
-              title="Logout"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
+            {plan === "free" && (
+              <Link
+                href="/settings/billing"
+                className="rounded-lg bg-neural-blue/10 border border-neural-blue/20 px-2.5 py-1 text-[10px] font-bold text-neural-blue hover:bg-neural-blue/20 transition-colors uppercase tracking-wider"
+              >
+                Upgrade
+              </Link>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

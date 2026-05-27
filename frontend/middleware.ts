@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { ADMIN_EMAIL } from './lib/constants'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -57,7 +58,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/transactions') ||
     pathname.startsWith('/forecast') ||
-    pathname.startsWith('/settings')
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/copilot')
 
   const isAuthPath =
     pathname.startsWith('/login') ||
@@ -88,6 +91,20 @@ export async function middleware(request: NextRequest) {
       })
       return redirectResponse
     }
+
+    // Role verification for /admin path
+    if (pathname.startsWith('/admin')) {
+      const isAdmin = user.email === ADMIN_EMAIL || user.user_metadata?.role === 'admin'
+      if (!isAdmin) {
+        console.log(`[Middleware Debug] Admin path access denied for user: ${user.email}. Not authorized.`);
+        const dashboardUrl = new URL('/dashboard', request.url)
+        const redirectResponse = NextResponse.redirect(dashboardUrl)
+        response.cookies.getAll().forEach((cookie) => {
+          redirectResponse.cookies.set(cookie)
+        })
+        return redirectResponse
+      }
+    }
   }
 
   if (isAuthPath && user && user.email_confirmed_at) {
@@ -109,6 +126,8 @@ export const config = {
     '/transactions/:path*',
     '/forecast/:path*',
     '/settings/:path*',
+    '/admin/:path*',
+    '/copilot/:path*',
     '/login',
     '/register',
   ],

@@ -8,6 +8,7 @@ export interface CurrencyConfig {
   plans: {
     free: number;
     pro: number;
+    max: number; // -1 represents custom/Contact Sales
   };
 }
 
@@ -20,6 +21,7 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
     plans: {
       free: 0,
       pro: 19,
+      max: -1,
     },
   },
   INR: {
@@ -29,7 +31,8 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
     locale: "en-IN",
     plans: {
       free: 0,
-      pro: 1599,
+      pro: 1299,
+      max: -1,
     },
   },
   EUR: {
@@ -39,7 +42,8 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
     locale: "de-DE",
     plans: {
       free: 0,
-      pro: 19,
+      pro: 18,
+      max: -1,
     },
   },
   GBP: {
@@ -50,6 +54,7 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
     plans: {
       free: 0,
       pro: 17,
+      max: -1,
     },
   },
 };
@@ -107,6 +112,7 @@ export function detectUserCurrency(): CurrencyCode {
 
 export function formatPrice(amount: number, config: CurrencyConfig): string {
   if (amount === 0) return "Free";
+  if (amount === -1) return "Contact Sales";
   return new Intl.NumberFormat(config.locale, {
     style: "currency",
     currency: config.code,
