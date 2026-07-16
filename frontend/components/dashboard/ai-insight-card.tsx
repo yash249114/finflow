@@ -58,7 +58,7 @@ export default function AIInsightCard({
       initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className={`glass-card rounded-2xl p-4 ${config.borderColor} border hover:border-opacity-30 transition-all duration-300 group cursor-default`}
+      className={`glass-card rounded-2xl p-4 ${config.borderColor} border hover:border-opacity-30 transition-[background-color,border-color,box-shadow,color,opacity] duration-300 group cursor-default`}
       style={{ boxShadow: `0 0 40px ${config.glowColor}` }}
     >
       <div className="flex items-start space-x-3">

@@ -220,7 +220,7 @@ export default function UserManagement() {
             {pendingRequests.map((req) => (
               <div 
                 key={req.id} 
-                className="bg-zinc-950/40 border border-white/5 hover:border-white/10 rounded-xl p-4 transition-all flex flex-col justify-between gap-4"
+                className="bg-zinc-950/40 border border-white/5 hover:border-white/10 rounded-xl p-4 transition-[background-color,border-color,box-shadow,color,opacity] flex flex-col justify-between gap-4"
               >
                 <div className="space-y-2">
                   <div className="flex justify-between items-start">
@@ -240,14 +240,14 @@ export default function UserManagement() {
                 <div className="flex justify-end gap-2 border-t border-white/[0.03] pt-3">
                   <button
                     onClick={() => handleDeclineRequest(req)}
-                    className="flex items-center space-x-1 border border-white/5 bg-white/5 hover:bg-white/10 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer"
+                    className="flex items-center space-x-1 border border-white/5 bg-white/5 hover:bg-white/10 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-[background-color,border-color,box-shadow,color,opacity] cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3 text-red-400" />
                     <span>Decline & Archive</span>
                   </button>
                   <button
                     onClick={() => handleApproveMax(req)}
-                    className="flex items-center space-x-1 bg-violet-650 hover:bg-violet-750 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer shadow-md shadow-violet-500/10"
+                    className="flex items-center space-x-1 bg-violet-650 hover:bg-violet-750 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-[background-color,border-color,box-shadow,color,opacity] cursor-pointer shadow-md shadow-violet-500/10"
                   >
                     <Check className="w-3 h-3" />
                     <span>Approve & Upgrade</span>

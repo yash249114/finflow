@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={tab.name}
                 href={tab.href}
-                className={`relative flex items-center space-x-2 rounded-lg px-4 py-2 text-xs font-semibold tracking-wide transition-all ${
+                className={`relative flex items-center space-x-2 rounded-lg px-4 py-2 text-xs font-semibold tracking-wide transition-[background-color,border-color,box-shadow,color,opacity] ${
                   isActive ? "text-white" : "text-gray-400 hover:text-white"
                 }`}
               >

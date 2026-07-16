@@ -345,7 +345,7 @@ export function WorkspaceRenderer({ schema }: WorkspaceRendererProps) {
                     onClick={() => {
                       toast.success(`Flagged ${anom.description} for team audit`);
                     }}
-                    className="flex items-center space-x-1 border border-white/5 bg-white/5 hover:bg-white/10 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer"
+                    className="flex items-center space-x-1 border border-white/5 bg-white/5 hover:bg-white/10 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold transition-[background-color,border-color,box-shadow,color,opacity] cursor-pointer"
                   >
                     <XCircle className="w-3 h-3 text-rose-400" />
                     <span>Flag Issue</span>
@@ -354,7 +354,7 @@ export function WorkspaceRenderer({ schema }: WorkspaceRendererProps) {
                     onClick={() => {
                       toast.success(`Marked ${anom.description} as safe`);
                     }}
-                    className="flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer"
+                    className="flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold transition-[background-color,border-color,box-shadow,color,opacity] cursor-pointer"
                   >
                     <CheckCircle className="w-3 h-3" />
                     <span>Approve / Safe</span>

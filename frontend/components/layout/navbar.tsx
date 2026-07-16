@@ -30,7 +30,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
         scrolled
           ? "border-b border-[#1D1E22]/80 bg-[#08090A]/75 backdrop-blur-xl py-3 shadow-lg shadow-black/40"
           : "bg-transparent py-5"
@@ -47,7 +47,7 @@ export default function Navbar() {
               >
                 <Logo size={28} glow />
               </motion.div>
-              <span className="text-xl font-extrabold tracking-tight text-white bg-clip-text bg-gradient-to-r from-white to-gray-400 group-hover:to-white transition-all duration-300">
+              <span className="text-xl font-extrabold tracking-tight text-white bg-clip-text bg-gradient-to-r from-white to-gray-400 group-hover:to-white transition-[background-color,border-color,box-shadow,color,opacity] duration-300">
                 FinFlow
               </span>
             </Link>
@@ -93,7 +93,7 @@ export default function Navbar() {
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Link
                 href="/register"
-                className="btn-premium px-5 py-2.5 text-xs font-semibold rounded-xl text-white transition-all text-center inline-block"
+                className="btn-premium px-5 py-2.5 text-xs font-semibold rounded-xl text-white transition-[background-color,border-color,box-shadow,color,opacity] text-center inline-block"
               >
                 Get Started
               </Link>
@@ -162,7 +162,7 @@ export default function Navbar() {
               <Link
                 href="/register"
                 onClick={() => setIsOpen(false)}
-                className="btn-premium py-3 text-sm font-semibold rounded-xl text-white transition-all text-center"
+                className="btn-premium py-3 text-sm font-semibold rounded-xl text-white transition-[background-color,border-color,box-shadow,color,opacity] text-center"
               >
                 Get Started
               </Link>

@@ -62,7 +62,7 @@ export default function Sidebar() {
             <Link
               key={link.name}
               href={link.href}
-              className={`relative flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13px] font-medium transition-all duration-200 group ${
+              className={`relative flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13px] font-medium transition-[background-color,border-color,box-shadow,color,opacity] duration-200 group ${
                 isActive
                   ? "text-white bg-white/[0.06] nav-active-pill"
                   : "text-text-muted hover:text-white hover:bg-white/[0.03]"

@@ -251,7 +251,7 @@ export default function DashboardPage() {
         <p className="text-sm font-semibold text-danger mb-3">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-5 py-2.5 btn-chrome rounded-xl text-white text-xs font-semibold transition-all"
+          className="px-5 py-2.5 btn-chrome rounded-xl text-white text-xs font-semibold transition-[background-color,border-color,box-shadow,color,opacity]"
         >
           Retry
         </button>
@@ -279,14 +279,14 @@ export default function DashboardPage() {
         <div className="flex items-center space-x-2.5">
           <Link
             href="/forecast"
-            className="flex items-center space-x-1.5 rounded-xl btn-chrome px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-white transition-all"
+            className="flex items-center space-x-1.5 rounded-xl btn-chrome px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-white transition-[background-color,border-color,box-shadow,color,opacity]"
           >
             <Eye className="h-3.5 w-3.5" />
             <span>Forecast</span>
           </Link>
           <Link
             href="/transactions"
-            className="flex items-center space-x-1.5 rounded-xl bg-neural-blue hover:bg-neural-blue/90 text-white px-3.5 py-2 text-xs font-semibold transition-all shadow-lg shadow-neural-blue/20"
+            className="flex items-center space-x-1.5 rounded-xl bg-neural-blue hover:bg-neural-blue/90 text-white px-3.5 py-2 text-xs font-semibold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-neural-blue/20"
           >
             <Upload className="h-3.5 w-3.5" />
             <span>Upload CSV</span>
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                 <p className="text-[11px] text-text-muted mt-1.5 mb-4 leading-relaxed">
                   Predict cash flow, compute safety thresholds, and manage budget horizons.
                 </p>
-                <Link href="/settings/billing" className="rounded-xl bg-neural-blue hover:bg-neural-blue/90 text-white px-5 py-2.5 text-xs font-semibold transition-all shadow-lg shadow-neural-blue/25">
+                <Link href="/settings/billing" className="rounded-xl bg-neural-blue hover:bg-neural-blue/90 text-white px-5 py-2.5 text-xs font-semibold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-neural-blue/25">
                   Upgrade to Pro
                 </Link>
               </div>

@@ -469,7 +469,7 @@ function LoginForm() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full btn-premium h-10 rounded-xl font-semibold transition-all border border-indigo-500/30 text-white flex items-center justify-center"
+              className="w-full btn-premium h-10 rounded-xl font-semibold transition-[background-color,border-color,box-shadow,color,opacity] border border-indigo-500/30 text-white flex items-center justify-center"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -494,7 +494,7 @@ function LoginForm() {
               type="button"
               disabled={loading}
               onClick={handleGoogleLogin}
-              className="w-full bg-[#1e2022] hover:bg-[#2a2c2e] text-white h-10 rounded-xl font-semibold border border-gray-800 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-[#1e2022] hover:bg-[#2a2c2e] text-white h-10 rounded-xl font-semibold border border-gray-800 transition-[background-color,border-color,box-shadow,color,opacity] flex items-center justify-center gap-2"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path

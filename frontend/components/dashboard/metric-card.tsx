@@ -81,7 +81,7 @@ export default function MetricCard({
       initial="hidden"
       animate="visible"
       transition={{ delay }}
-      className="glass-card rounded-2xl p-5 cursor-glow-area group hover:border-white/[0.08] transition-all duration-300"
+      className="glass-card rounded-2xl p-5 cursor-glow-area group hover:border-white/[0.08] transition-[background-color,border-color,box-shadow,color,opacity] duration-300"
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-3">

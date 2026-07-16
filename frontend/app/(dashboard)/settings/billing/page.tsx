@@ -243,7 +243,7 @@ export default function BillingPage() {
         {/* FREE PLAN */}
         <motion.div variants={fadeSlideUp}>
           <CursorGlow className="h-full">
-            <div className={`h-full glass-card border border-white/5 rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden transition-all duration-300 ${userPlan === "free" ? 'ring-2 ring-indigo-500/30 border-indigo-500/20' : ''}`}>
+            <div className={`h-full glass-card border border-white/5 rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden transition-[background-color,border-color,box-shadow,color,opacity] duration-300 ${userPlan === "free" ? 'ring-2 ring-indigo-500/30 border-indigo-500/20' : ''}`}>
               {userPlan === "free" && (
                 <div className="absolute top-4 right-4 rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold text-gray-300 border border-white/10">
                   Current Plan
@@ -302,7 +302,7 @@ export default function BillingPage() {
         {/* PRO PLAN */}
         <motion.div variants={fadeSlideUp}>
           <CursorGlow className="h-full">
-            <div className={`h-full glass-card border rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden transition-all duration-300 ${
+            <div className={`h-full glass-card border rounded-2xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden transition-[background-color,border-color,box-shadow,color,opacity] duration-300 ${
               userPlan === "pro" 
                 ? 'ring-2 ring-indigo-500 border-indigo-500/50' 
                 : 'border-indigo-500/20 hover:border-indigo-500/40'
@@ -355,7 +355,7 @@ export default function BillingPage() {
                   <button
                     onClick={handleManagePortal}
                     disabled={portalLoading}
-                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2"
+                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-xs transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2"
                   >
                     {portalLoading ? (
                       <>
@@ -380,7 +380,7 @@ export default function BillingPage() {
                   <button
                     onClick={handleUpgrade}
                     disabled={checkoutLoading}
-                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 cursor-pointer"
+                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-xs transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     {checkoutLoading ? (
                       <>
@@ -404,7 +404,7 @@ export default function BillingPage() {
         {/* MAX PLAN */}
         <motion.div variants={fadeSlideUp}>
           <CursorGlow className="h-full">
-            <div className={`h-full glass-card-elevated border rounded-2xl p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-all duration-300 ${
+            <div className={`h-full glass-card-elevated border rounded-2xl p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-[background-color,border-color,box-shadow,color,opacity] duration-300 ${
               userPlan === "max" 
                 ? 'ring-2 ring-violet-500 border-violet-500/50' 
                 : 'border-violet-500/20 hover:border-violet-500/40'
@@ -460,7 +460,7 @@ export default function BillingPage() {
                 ) : (
                   <button
                     onClick={() => setIsMaxModalOpen(true)}
-                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold py-3 text-xs transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold py-3 text-xs transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-violet-500/25 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>Request FinFlow MAX</span>
                     <ArrowRight className="w-3.5 h-3.5" />

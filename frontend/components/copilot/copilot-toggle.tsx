@@ -17,7 +17,7 @@ export default function CopilotToggle() {
   return (
     <motion.button
       onClick={() => router.push("/copilot")}
-      className={`relative flex items-center space-x-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold tracking-wide transition-all select-none border cursor-pointer ${
+      className={`relative flex items-center space-x-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold tracking-wide transition-[background-color,border-color,box-shadow,color,opacity] select-none border cursor-pointer ${
         isCopilotPage
           ? "bg-gradient-to-r from-violet-600/20 to-indigo-600/20 text-white border-violet-500/30 glow-neural"
           : "bg-zinc-950/60 hover:bg-zinc-900 border-white/5 hover:border-violet-500/30 text-gray-300 hover:text-white"

@@ -208,7 +208,7 @@ export default function MaxRequestForm() {
               value={reasonVal}
               onChange={(e) => setReasonVal(e.target.value)}
               required
-              className="input-premium w-full rounded-xl text-xs p-3 outline-none transition-all"
+              className="input-premium w-full rounded-xl text-xs p-3 outline-none transition-[background-color,border-color,box-shadow,color,opacity]"
             />
           </div>
 
@@ -221,7 +221,7 @@ export default function MaxRequestForm() {
           <Button
             type="submit"
             disabled={formState === "loading"}
-            className="w-full btn-premium h-11 rounded-xl font-semibold transition-all flex items-center justify-center gap-1.5 border border-indigo-500/30 text-white"
+            className="w-full btn-premium h-11 rounded-xl font-semibold transition-[background-color,border-color,box-shadow,color,opacity] flex items-center justify-center gap-1.5 border border-indigo-500/30 text-white"
           >
             {formState === "loading" ? (
               <span className="flex items-center gap-2 justify-center">

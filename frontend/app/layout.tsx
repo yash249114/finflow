@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Roboto_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
-const inter = Inter({ 
+const geist = Inter({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-inter" 
+  display: "swap",
+});
+
+const geistMono = Roboto_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -24,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} font-sans bg-background text-text-primary antialiased`}>
+      <body className={`${geist.className} ${geistMono.className} font-sans bg-background text-text-primary antialiased`}>
         <AuthProvider>
           {children}
           <Toaster theme="dark" closeButton />

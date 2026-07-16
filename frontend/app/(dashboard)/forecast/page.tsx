@@ -238,13 +238,13 @@ export default function ForecastPage() {
           <div className="flex flex-wrap gap-4 w-full justify-center">
             <Link
               href="/settings/billing"
-              className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 text-sm transition-all shadow-lg shadow-blue-500/20"
+              className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 text-sm transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-blue-500/20"
             >
               Upgrade to Pro — $19/month
             </Link>
             <Link
               href="/dashboard"
-              className="rounded-xl border border-gray-700 hover:bg-gray-800 text-text-muted font-semibold px-8 py-3.5 text-sm transition-all"
+              className="rounded-xl border border-gray-700 hover:bg-gray-800 text-text-muted font-semibold px-8 py-3.5 text-sm transition-[background-color,border-color,box-shadow,color,opacity]"
             >
               Learn more about Pro
             </Link>
@@ -286,7 +286,7 @@ export default function ForecastPage() {
               key={days}
               onClick={() => setHorizon(days)}
               disabled={forecastLoading}
-              className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition-[background-color,border-color,box-shadow,color,opacity] ${
                 horizon === days
                   ? "bg-gray-900 text-white border border-gray-800 shadow"
                   : "text-text-muted hover:text-white"

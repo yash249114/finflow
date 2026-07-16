@@ -63,7 +63,7 @@ export default function SettingsPage() {
             <motion.div key={card.title} variants={fadeSlideUp} transition={{ delay: i * 0.08 }}>
               <Link
                 href={card.href}
-                className="glass-card rounded-2xl p-5 flex items-start space-x-4 group hover:border-white/[0.08] transition-all duration-300 cursor-glow-area block"
+                className="glass-card rounded-2xl p-5 flex items-start space-x-4 group hover:border-white/[0.08] transition-[background-color,border-color,box-shadow,color,opacity] duration-300 cursor-glow-area block"
               >
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.accentBg} shrink-0`}>
                   <Icon className={`h-5 w-5 ${card.accent}`} />

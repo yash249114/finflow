@@ -251,7 +251,7 @@ export default function AboutPage() {
           <div className="flex justify-center">
             <Link
               href="/register"
-              className="btn-premium px-6 py-3 text-xs font-semibold text-white transition-all border border-indigo-500/30 rounded-xl"
+              className="btn-premium px-6 py-3 text-xs font-semibold text-white transition-[background-color,border-color,box-shadow,color,opacity] border border-indigo-500/30 rounded-xl"
             >
               <span>Get Started Free</span>
               <ArrowRight className="h-4.5 w-4.5" />

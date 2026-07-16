@@ -229,7 +229,7 @@ export default function ProfilePage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center space-x-2 rounded-xl bg-neural-blue hover:bg-neural-blue/90 text-white px-5 py-2.5 text-sm font-semibold transition-all shadow-lg shadow-neural-blue/20 disabled:opacity-50"
+          className="flex items-center space-x-2 rounded-xl bg-neural-blue hover:bg-neural-blue/90 text-white px-5 py-2.5 text-sm font-semibold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-neural-blue/20 disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
           <span>{saving ? "Saving..." : "Save Changes"}</span>

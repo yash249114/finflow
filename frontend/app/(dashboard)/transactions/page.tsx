@@ -287,7 +287,7 @@ export default function TransactionsPage() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={file ? undefined : handleSelectFileClick}
-          className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all ${
+          className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-[background-color,border-color,box-shadow,color,opacity] ${
             file
               ? "border-gray-800 bg-gray-950/20 cursor-default"
               : isDragOver
@@ -351,7 +351,7 @@ export default function TransactionsPage() {
                   {/* Custom animated progress bar */}
                   <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500 transition-all duration-300"
+                      className="h-full bg-blue-500 transition-[background-color,border-color,box-shadow,color,opacity] duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -539,7 +539,7 @@ export default function TransactionsPage() {
             </div>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold transition-all shadow-md"
+              className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold transition-[background-color,border-color,box-shadow,color,opacity] shadow-md"
             >
               Upload CSV
             </button>

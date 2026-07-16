@@ -57,7 +57,8 @@ const config: Config = {
         glow: "rgba(99,102,241,0.15)",
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-geist)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'monospace'],
       },
       borderRadius: {
         '2xl': '1rem',

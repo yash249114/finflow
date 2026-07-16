@@ -205,7 +205,7 @@ export function LayoutClient({
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white uppercase transition-all ${
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white uppercase transition-[background-color,border-color,box-shadow,color,opacity] ${
                   userDropdownOpen
                     ? 'ring-2 ring-neural-blue/40 bg-gradient-to-br from-neural-blue to-neural-violet'
                     : 'bg-gradient-to-br from-neural-blue/80 to-neural-violet/80 hover:from-neural-blue hover:to-neural-violet'
@@ -303,7 +303,7 @@ export function LayoutClient({
                 <button
                   type="submit"
                   disabled={submittingWaitlist}
-                  className="w-full bg-indigo-650 hover:bg-indigo-600 disabled:bg-zinc-800 disabled:text-gray-600 text-white rounded-xl py-3 text-xs font-bold transition-all shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full bg-indigo-650 hover:bg-indigo-600 disabled:bg-zinc-800 disabled:text-gray-600 text-white rounded-xl py-3 text-xs font-bold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {submittingWaitlist ? "Submitting Application..." : "Submit Strategic Request"}
                 </button>

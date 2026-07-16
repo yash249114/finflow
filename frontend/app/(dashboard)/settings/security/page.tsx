@@ -114,7 +114,7 @@ export default function SecurityPage() {
           <button
             onClick={handlePasswordChange}
             disabled={saving || !newPassword || !confirmPassword}
-            className="flex items-center space-x-2 rounded-xl bg-amber-500 hover:bg-amber-500/90 text-black px-5 py-2.5 text-sm font-semibold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
+            className="flex items-center space-x-2 rounded-xl bg-amber-500 hover:bg-amber-500/90 text-black px-5 py-2.5 text-sm font-semibold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-amber-500/20 disabled:opacity-50"
           >
             <Key className="h-4 w-4" />
             <span>{saving ? "Updating..." : "Update Password"}</span>

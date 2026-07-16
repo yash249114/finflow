@@ -13,6 +13,7 @@ import (
 	"github.com/finflow/api/internal/db"
 	"github.com/finflow/api/internal/handlers"
 	"github.com/finflow/api/internal/middleware"
+	ratelimit "github.com/finflow/api/internal/middleware"
 	jwtService "github.com/finflow/api/internal/services/jwt"
 	"github.com/finflow/api/internal/services/mlclient"
 	"github.com/gin-contrib/cors"
@@ -88,6 +89,7 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	r.Use(ratelimit.RateLimit())
 
 	// ── Health ───────────────────────────────────────────
 	r.GET("/health", func(c *gin.Context) {
