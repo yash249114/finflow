@@ -20,7 +20,7 @@ async function goto(page: Page, path: string) {
   await page.goto(path, { waitUntil: 'domcontentloaded' });
 }
 
-async function registerAndConfirm(page: Page) {
+async function registerAndConfirm(page: Page, apiRequest: import('@playwright/test').APIRequestContext) {
   await goto(page, '/register');
   await page.locator('input[name="email"], input[type="email"]').fill(email);
   const pw = page.locator('input[name="password"], input[type="password"]').first();
@@ -28,18 +28,23 @@ async function registerAndConfirm(page: Page) {
   // Confirm password field if present
   const confirm = page.locator('input[name="confirm_password"], input[placeholder*="Confirm"]');
   if (await confirm.count()) await confirm.fill(password);
+
+  // reCAPTCHA is bypassed automatically when NEXT_PUBLIC_RECAPTCHA_SITE_KEY is unset.
   await page.getByRole('button', { name: /sign up|register|create account/i }).click();
 
-  // OTP step — wait for the verification surface (code input or "check your email")
-  await expect(
-    page.locator('text=/verify|otp|code|check your (email|inbox)/i').first()
-  ).toBeVisible({ timeout: 15000 });
-
-  // In a real run the OTP is confirmed via email/magic link. For hermetic
-  // execution the deployment must expose a test hook; otherwise the test
-  // pauses here for manual confirmation when running locally.
-  if (process.env.E2E_OTP_AUTO !== '1') {
-    await page.context().grantPermissions([]);
+  // Auto-confirm the OTP via the test-only endpoint when enabled (E2E_OTP_AUTO=1).
+  if (process.env.E2E_OTP_AUTO === '1') {
+    const confirmRes = await apiRequest.post(`${BASE}/api/e2e/confirm-signup`, {
+      data: { email, password },
+    });
+    if (!confirmRes.ok()) {
+      console.warn(`[e2e] OTP auto-confirm failed: ${await confirmRes.text()}`);
+    }
+  } else {
+    // Otherwise wait for the verification surface (code input or "check your email").
+    await expect(
+      page.locator('text=/verify|otp|code|check your (email|inbox)/i').first()
+    ).toBeVisible({ timeout: 15000 });
     console.warn('[e2e] OTP confirmation requires E2E_OTP_AUTO=1 or manual verification');
   }
 }
@@ -53,8 +58,8 @@ async function login(page: Page) {
 }
 
 test.describe('FinFlow full journey', () => {
-  test('Register → OTP → Login', async ({ page }) => {
-    await registerAndConfirm(page);
+  test('Register → OTP → Login', async ({ page, request }) => {
+    await registerAndConfirm(page, request);
     // After OTP confirm the app redirects to the dashboard or login
     await expect(page).toHaveURL(/\/(dashboard|login)/, { timeout: 20000 });
   });

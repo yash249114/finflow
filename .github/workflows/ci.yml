@@ -116,6 +116,10 @@ jobs:
           BASE_URL: ${{ secrets.E2E_BASE_URL || 'https://finflow-ashy-six.vercel.app' }}
           API_URL: ${{ secrets.E2E_API_URL || 'https://api.finflow.app' }}
           ML_URL: ${{ secrets.E2E_ML_URL || 'https://ml.finflow.app' }}
+          E2E_OTP_AUTO: '1'
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
 
   # ─── Security ─────────────────────────────────────────
   security:
