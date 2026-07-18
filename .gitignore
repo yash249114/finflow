@@ -72,3 +72,8 @@ coverage.xml
 # ML models and temporary files
 ml-service/models/*.joblib
 ml-service/.pytest_cache/
+
+# Playwright
+playwright-report/
+test-results/
+.playwright/
