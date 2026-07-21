@@ -1,7 +1,7 @@
 # ml-service/requirements.txt
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
-pydantic==2.7.4
+pydantic==2.13.4
 scikit-learn==1.5.0
 joblib==1.4.2
 statsmodels==0.14.2
