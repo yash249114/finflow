@@ -34,20 +34,15 @@ export async function GET(request: Request) {
     );
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
-      
-      // Prevent open redirect by restricting to relative paths
+      // Restrict redirect to relative paths only — blocks open redirect
       const nextPath = next.startsWith("/") ? next : "/dashboard";
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${nextPath}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${nextPath}`);
-      } else {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
-        return NextResponse.redirect(`${appUrl}${nextPath}`);
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || origin).replace(/\/+$/, '');
+      const allowedOrigins = [origin, appUrl];
+      if (process.env.NODE_ENV === "production") {
+        allowedOrigins.push("https://finflow.vercel.app");
       }
+      const redirectTarget = `${allowedOrigins[0]}${nextPath}`;
+      return NextResponse.redirect(redirectTarget);
     }
   }
 

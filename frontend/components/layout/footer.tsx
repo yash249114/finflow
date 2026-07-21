@@ -15,7 +15,7 @@ export function Footer() {
             <Logo size={20} glow={false} />
             <span className="font-bold text-slate-300">FinFlow</span>
             <span className="text-slate-800">|</span>
-            <span>© 2025 FinFlow. All rights reserved.</span>
+            <span>© 2026 FinFlow. All rights reserved.</span>
           </div>
 
           <div className="flex space-x-6 text-[11px]">

@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
       <main className="max-w-4xl mx-auto px-6 py-16 relative z-10">
         <div className="border border-[#1D1E22]/80 bg-[#0F1012]/60 backdrop-blur-md rounded-2xl p-8 md:p-12 shadow-2xl">
           <div className="border-b border-[#1D1E22]/80 pb-6 mb-8">
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
               Terms of Service
             </h1>
             <p className="text-xs text-gray-500 uppercase tracking-widest">

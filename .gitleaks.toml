@@ -1,0 +1,55 @@
+# FinFlow — GitLeaks Configuration
+# Scans for secrets, keys, tokens, and credentials
+
+title = "FinFlow GitLeaks Scan"
+
+# Extend the default ruleset
+[extend]
+useDefault = true
+
+# Allow specific patterns that are false positives
+[allowlist]
+description = "Whitelisted patterns (test credentials, example values)"
+paths = [
+    "(?i)test_page",
+    "(?i)node_modules",
+    "(?i)__pycache__",
+    "(?i)\\.next",
+    "(?i)dist",
+    "(?i)build",
+]
+
+# Allow specific commit SHAs (known safe)
+commits = [
+    "0000000000000000000000000000000000000000",
+]
+
+# Allow regex patterns for example/test data
+regexes = [
+    "(?i)placeholder",
+    "(?i)replace_me",
+    "(?i)your_.*_key",
+    "(?i)change-me",
+    "example\\.com",
+    "example\\.org",
+    "test@example\\.com",
+    "password",
+]
+
+[[rules]]
+id = "finflow-no-db-password-default"
+description = "Default database password should not exist in source"
+regex = '''postgresql://\w+:password@'''
+tags = ["finflow", "database", "credentials"]
+
+[[rules]]
+id = "finflow-no-jwt-in-code"
+description = "JWT secret should not be hardcoded"
+regex = '''JWT_SECRET\s*[:=]\s*["'][^"']+["']'''
+tags = ["finflow", "jwt", "credentials"]
+
+[[rules]]
+id = "finflow-no-api-key-in-url"
+description = "API key should not be in URL query parameters"
+regex = '''[?&]key=\w+'''
+tags = ["finflow", "api-key", "url"]

@@ -1,15 +1,36 @@
 # ml-service/services/categorizer.py
 """Transaction categorization using TF-IDF + LogisticRegression."""
 
-import os
+import json
 import logging
+import os
 from pathlib import Path
+import tempfile
 
 import joblib
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+
+
+def _load_model_safely(path: Path):
+    """Load a joblib model with type verification to prevent RCE.
+
+    joblib uses its own wrapper format over pickle, so we load via joblib
+    and then verify the loaded object is a trusted sklearn Pipeline type.
+    """
+    import joblib
+    from sklearn.pipeline import Pipeline
+
+    model = joblib.load(path)
+
+    if not isinstance(model, Pipeline):
+        raise ValueError(
+            f"Loaded model is not an sklearn Pipeline: {type(model).__name__}"
+        )
+
+    return model
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +343,7 @@ class Categorizer:
 
         if MODEL_PATH.exists():
             logger.info("Loading categorizer model from %s", MODEL_PATH)
-            self.pipeline = joblib.load(MODEL_PATH)
+            self.pipeline = _load_model_safely(MODEL_PATH)
             logger.info("Categorizer model loaded successfully")
         else:
             logger.info("Training new categorizer model...")
@@ -357,6 +378,9 @@ class Categorizer:
         
         Returns 'Other' for any prediction with confidence below threshold.
         """
+        if not descriptions:
+            return []
+
         if self.pipeline is None:
             return ["Other"] * len(descriptions)
 

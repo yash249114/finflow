@@ -557,7 +557,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center space-x-3.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-xs font-bold text-text-muted shrink-0 group-hover:bg-neural-blue/10 group-hover:text-neural-blue transition-colors">
-                    {tx.category.charAt(0).toUpperCase()}
+                    {tx.category ? tx.category.charAt(0).toUpperCase() : '?'}
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-white" title={tx.description}>

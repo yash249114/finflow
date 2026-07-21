@@ -1,7 +1,9 @@
 // FinFlow constants and configuration
 
 // ─── Admin ───────────────────────────────────────────────
-export const ADMIN_EMAIL = 'yaswanthrajmouli14@gmail.com'
+// Determined at build/runtime from NEXT_PUBLIC_ADMIN_EMAIL env var.
+// Falls back to empty string — grant no admin access by default.
+export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || ''
 
 // ─── Roles ───────────────────────────────────────────────
 export type UserRole = 'user' | 'admin'

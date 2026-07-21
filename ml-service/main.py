@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -33,11 +34,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger("finflow-ml")
 
+# ── Startup: Load/Train Model ─────────────────────────────
+categorizer: Categorizer | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global categorizer
+    logger.info("Starting FinFlow ML Service...")
+
+    start = time.time()
+    categorizer = Categorizer()
+    elapsed = time.time() - start
+
+    init_categorizer(categorizer)
+    logger.info("Model loaded in %.2f seconds", elapsed)
+    yield
+
+
 # ── Application ────────────────────────────────────────────
 app = FastAPI(
     title="FinFlow ML Service",
     description="Transaction categorization and cash flow forecasting",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
@@ -51,22 +71,6 @@ async def limit_body_size(request, call_next):
             status_code=413, content={"detail": "Request too large (max 10 MB)"}
         )
     return await call_next(request)
-
-# ── Startup: Load/Train Model ─────────────────────────────
-categorizer: Categorizer | None = None
-
-
-@app.on_event("startup")
-async def startup() -> None:
-    global categorizer
-    logger.info("Starting FinFlow ML Service...")
-
-    start = time.time()
-    categorizer = Categorizer()
-    elapsed = time.time() - start
-
-    init_categorizer(categorizer)
-    logger.info("Model loaded in %.2f seconds", elapsed)
 
 
 # ── Routes ─────────────────────────────────────────────────

@@ -339,6 +339,15 @@
   }
 }
 
+/* ─── Touch Device Hover Protection ───────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  .glass-card:hover,
+  .glass-card-elevated:hover {
+    border-color: rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+  }
+}
+
 /* Film grain on body */
 body::before {
   content: "";

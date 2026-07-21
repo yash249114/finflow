@@ -64,10 +64,11 @@ export async function POST(req: NextRequest) {
 
     if (plan === "free" && redisUrl && redisToken && userId) {
       try {
-        const countKey = `quota:user:${userId}:date:${today}`;
-        const checkUrl = `${redisUrl}/get/${countKey}`;
+        const countKey = `quota:user:${userId.slice(0, 8)}:date:${today}`;
+        const checkUrl = `${redisUrl.replace(/\/+$/, '')}/get/${encodeURIComponent(countKey)}`;
+        const authHeader = `Bearer ${redisToken}`;
         const checkRes = await fetch(checkUrl, {
-          headers: { Authorization: `Bearer ${redisToken}` },
+          headers: { Authorization: authHeader },
         });
 
         if (checkRes.ok) {
@@ -80,14 +81,17 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          // Increment quota
-          const incrUrl = `${redisUrl}/incr/${countKey}`;
-          await fetch(incrUrl, {
-            headers: { Authorization: `Bearer ${redisToken}` },
-          });
+          const incrUrl = `${redisUrl.replace(/\/+$/, '')}/incr/${encodeURIComponent(countKey)}`;
+          const ttlUrl = `${redisUrl.replace(/\/+$/, '')}/expire/${encodeURIComponent(countKey)}/86400`;
+          await Promise.all([
+            fetch(incrUrl, { headers: { Authorization: authHeader } }),
+            fetch(ttlUrl, { headers: { Authorization: authHeader } }),
+          ]);
         }
       } catch (redisErr) {
-        console.warn("Upstash Redis quota check failed, proceeding:", redisErr);
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Upstash Redis quota check failed (non-fatal):", redisErr);
+        }
       }
     }
 
@@ -234,8 +238,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Route 3: Gemini Flash (via Google Generative Language REST Endpoint) - Free/Fallback
-    if (geminiKey && !completed) {
+    // Route 3: Gemini Flash (via Google Generative Language REST Endpoint) - Pro/Max only
+    if (geminiKey && !completed && (plan === "pro" || plan === "max")) {
       try {
         console.log("[AI API Route] Routing to Google Gemini-1.5-Flash");
         
@@ -256,32 +260,32 @@ export async function POST(req: NextRequest) {
           parts: [{ text: SYSTEM_PROMPT + "\n\nUser Question: " + message }]
         });
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: contentsInput,
-              generationConfig: {
-                maxOutputTokens: 1500,
-                temperature: 0.2,
-              }
-            }),
-          }
-        );
+        const geminiUrl = new URL('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent');
+        geminiUrl.searchParams.set('key', geminiKey);
+        const geminiRes = await fetch(geminiUrl.toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: contentsInput,
+            generationConfig: {
+              maxOutputTokens: 1500,
+              temperature: 0.2,
+            }
+          }),
+        });
 
         if (geminiRes.ok) {
           const resJson = await geminiRes.json();
           textResponse = resJson.candidates[0].content.parts[0].text;
           completed = true;
         } else {
-          console.error("[AI API Route] Gemini call failed:", await geminiRes.text());
+          await geminiRes.text();
+          console.error("[AI API Route] Gemini call failed (non-fatal):", geminiRes.status);
         }
-      } catch (err) {
-        console.error("[AI API Route] Gemini call error:", err);
+      } catch {
+        console.error("[AI API Route] Gemini call error (non-fatal):");
       }
     }
 

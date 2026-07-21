@@ -86,7 +86,7 @@ export default function AboutPage() {
           </div>
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-[1.1]">
             AI-Native <br />
-            <span className="bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+            <span className="text-indigo-400">
               Financial Intelligence
             </span>
           </h1>
@@ -267,7 +267,7 @@ export default function AboutPage() {
             <Logo size={20} glow={false} />
             <span className="font-bold text-gray-300">FinFlow</span>
             <span className="text-gray-800">|</span>
-            <span>© 2025 FinFlow. All rights reserved.</span>
+            <span>© 2026 FinFlow. All rights reserved.</span>
           </div>
 
           <div className="flex space-x-6">

@@ -51,8 +51,8 @@ export default function BillingPage() {
 
     fetchUser();
 
-    // Check if ?upgraded=true is in the URL
-    if (searchParams.get("upgraded") === "true") {
+    // Check if ?success=true is in the URL (from Lemon Squeezy redirect)
+    if (searchParams.get("success") === "true") {
       setShowConfetti(true);
       toast.success("Congratulations! You are now subscribed to FinFlow Pro.");
       // Stop confetti animation after 6 seconds

@@ -1,12 +1,14 @@
 # ml-service/models/schemas.py
 """Pydantic v2 schemas for all ML service request/response models."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ─── Classification ────────────────────────────────────────
 
 class ClassifyRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     descriptions: list[str] = Field(
         ...,
         min_length=1,
@@ -54,5 +56,7 @@ class ForecastResponse(BaseModel):
 # ─── Health ────────────────────────────────────────────────
 
 class HealthResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     status: str = "ok"
     model_loaded: bool = False

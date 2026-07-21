@@ -16,17 +16,28 @@ import (
 // Client communicates with the Python ML service.
 type Client struct {
 	baseURL    string
+	apiKey     string
 	httpClient *http.Client
 }
 
 // NewClient creates a new ML service client.
-func NewClient(baseURL string) *Client {
+func NewClient(baseURL, apiKey string) *Client {
 	return &Client{
 		baseURL: baseURL,
+		apiKey:  apiKey,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
 	}
+}
+
+func (c *Client) authHeaders() http.Header {
+	h := http.Header{}
+	h.Set("Content-Type", "application/json")
+	if c.apiKey != "" {
+		h.Set("Authorization", "Bearer "+c.apiKey)
+	}
+	return h
 }
 
 // Classify sends transaction descriptions to the ML service for categorization.
@@ -42,7 +53,9 @@ func (c *Client) Classify(ctx context.Context, descriptions []string) ([]string,
 	if err != nil {
 		return nil, fmt.Errorf("creating classify request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	for k, v := range c.authHeaders() {
+		req.Header[k] = v
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -51,7 +64,7 @@ func (c *Client) Classify(ctx context.Context, descriptions []string) ([]string,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MB limit
 		return nil, fmt.Errorf("ml-service /classify returned %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -79,7 +92,9 @@ func (c *Client) Forecast(ctx context.Context, transactions []models.ForecastTra
 	if err != nil {
 		return nil, fmt.Errorf("creating forecast request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	for k, v := range c.authHeaders() {
+		req.Header[k] = v
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -88,7 +103,7 @@ func (c *Client) Forecast(ctx context.Context, transactions []models.ForecastTra
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MB limit
 		return nil, fmt.Errorf("ml-service /forecast returned %d: %s", resp.StatusCode, string(body))
 	}
 

@@ -121,6 +121,14 @@ func (h *UploadHandler) UploadChunk(c *gin.Context) {
 		return
 	}
 
+	// Sanitize upload_id to prevent path traversal
+	for _, ch := range uploadID {
+		if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '_') {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid upload_id format"})
+			return
+		}
+	}
+
 	chunkIdx, _ := strconv.Atoi(chunkIdxStr)
 	totalChunks, _ := strconv.Atoi(totalChunksStr)
 
@@ -271,10 +279,6 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 
 	if len(result.Rows) > maxUploadRows {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("CSV has %d rows, exceeds limit of %d", len(result.Rows), maxUploadRows)})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid CSV: " + err.Error()})
 		return
 	}
 

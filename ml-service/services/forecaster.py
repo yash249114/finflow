@@ -14,6 +14,7 @@ from models.schemas import (
     ForecastResponse,
     ForecastSummary,
 )
+from routes.metrics import record_forecast
 
 logger = logging.getLogger(__name__)
 
@@ -109,10 +110,29 @@ def compute_forecast(req: ForecastRequest) -> ForecastResponse:
     else:
         trend = "stable"
 
+    # ── AIOps signals ────────────────────────────────────────
+    # Forecast confidence score (0-1): higher with more history and lower variance.
+    base = {"low": 0.45, "medium": 0.7, "high": 0.88}[confidence]
+    if recent_std > 0:
+        variance_penalty = min(0.3, recent_std / (abs(recent_mean) + recent_std + 1e-9))
+    else:
+        variance_penalty = 0.0
+    confidence_score = max(0.05, min(0.98, base - variance_penalty))
+
+    # Model drift score (0-1): compares recent volatility vs full-series volatility.
+    full_std = float(np.std(series))
+    drift_score = 0.0
+    if full_std > 0:
+        drift_score = float(np.clip(abs(recent_std - full_std) / full_std, 0.0, 1.0))
+
     summary = ForecastSummary(
         expected_net=expected_net,
         trend=trend,
         confidence=confidence,
+        confidence_score=round(confidence_score, 3),
     )
+
+    # Feed AIOps metrics route.
+    record_forecast(drift_score, confidence_score)
 
     return ForecastResponse(forecast=forecast_points, summary=summary)

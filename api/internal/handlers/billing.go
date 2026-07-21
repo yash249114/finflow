@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/finflow/api/internal/db"
 	"github.com/gin-gonic/gin"
@@ -155,8 +156,8 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 		return
 	}
 
-	url := fmt.Sprintf("https://api.lemonsqueezy.com/v1/customers?filter[email]=%s", user.Email)
-	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", url, nil)
+	filterURL := fmt.Sprintf("https://api.lemonsqueezy.com/v1/customers?filter[email]=%s", url.QueryEscape(user.Email))
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", filterURL, nil)
 	if err != nil {
 		log.Error().Err(err).Str("user_id", userID).Msg("failed to create customers request")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

@@ -313,7 +313,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-xs text-gray-500">
-          © 2025 FinFlow. All rights reserved.
+          © 2026 FinFlow. All rights reserved.
         </p>
       </div>
 

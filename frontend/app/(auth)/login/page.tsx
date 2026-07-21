@@ -39,7 +39,7 @@ declare global {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setUser } = useAuth();
+  const { refetch } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -271,19 +271,8 @@ function LoginForm() {
       }
 
       if (data.session) {
-        const sbUser = data.session.user;
-        const plan = (sbUser.user_metadata?.plan || 'free') as 'free' | 'pro' | 'max';
-        const emailVal = sbUser.email || '';
-        const role = (sbUser.user_metadata?.role === 'admin' || emailVal === 'yaswanthrajmouli14@gmail.com') ? 'admin' as const : 'user' as const;
-        setUser({
-          id: sbUser.id,
-          email: emailVal,
-          full_name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
-          plan,
-          role,
-          avatar_url: sbUser.user_metadata?.avatar_url,
-          company_name: sbUser.user_metadata?.company_name
-        });
+        // Let onAuthStateChange in AuthProvider handle user state
+        await refetch();
       }
 
       toast.success("Welcome back to FinFlow!");
@@ -363,7 +352,7 @@ function LoginForm() {
         </div>
 
         <p className="text-xs text-gray-500">
-          © 2025 FinFlow. All rights reserved.
+          © 2026 FinFlow. All rights reserved.
         </p>
       </div>
 

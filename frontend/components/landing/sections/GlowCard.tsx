@@ -14,7 +14,7 @@ export function GlowCard({ children, className = "" }: GlowCardProps) {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
       <div className="relative">{children}</div>
     </motion.div>
   );

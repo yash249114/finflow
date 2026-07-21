@@ -28,7 +28,7 @@ export function Max() {
             className="space-y-4"
           >
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-              FinFlow <span className="bg-gradient-to-r from-indigo-400 to-cyan-300 bg-clip-text text-transparent">MAX</span>
+              FinFlow <span className="text-indigo-400">MAX</span>
             </h2>
             <p className="text-base text-slate-400 leading-relaxed max-w-lg">
               This is not another billing package. FinFlow MAX is an isolated predictive layer acting as your autonomous CFO, alerting your board of runway anomalies weeks in advance.
