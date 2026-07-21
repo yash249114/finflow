@@ -77,7 +77,6 @@ export function LayoutClient({
     // ONLY redirect after loading is complete AND user is null
     if (!loading && !user) {
       const relativeFrom = '/' + pathname.replace(/^\/+/, '')
-      console.log(`[LayoutClient Debug] Verification complete. User is null. Redirecting to target: /login?from=${relativeFrom}`)
       router.replace(`/login?from=${relativeFrom}`)
     }
   }, [loading, user, router, pathname])

@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	maxUploadSize        = 20 << 20  // 20 MB max CSV file
-	maxUploadRows        = 100000    // 100k rows max per upload
-	maxChunkSize         = 5 << 20   // 5 MB per chunk
-	contentTypeCSV       = "text/csv"
-	contentTypeOctet     = "application/octet-stream"
+	maxUploadSize    = 20 << 20 // 20 MB max CSV file
+	maxUploadRows    = 100000   // 100k rows max per upload
+	maxChunkSize     = 5 << 20  // 5 MB per chunk
+	contentTypeCSV   = "text/csv"
+	contentTypeOctet = "application/octet-stream"
 )
 
 var allowedCSVExtensions = []string{".csv", ".tsv"}
@@ -314,9 +314,9 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	)
 
 	c.JSON(http.StatusOK, gin.H{
-		"uploaded": inserted,
-		"failed":   len(result.Errors),
-		"errors":   result.Errors,
+		"uploaded":  inserted,
+		"failed":    len(result.Errors),
+		"errors":    result.Errors,
 		"file_name": header.Filename,
 	})
 }

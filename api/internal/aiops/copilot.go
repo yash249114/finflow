@@ -14,9 +14,9 @@ import (
 
 // ChatRequest is the inbound copilot message.
 type ChatRequest struct {
-	Message string `json:"message"`
-	Plan    string `json:"plan"` // free | pro | max
-	UserID  string `json:"user_id"`
+	Message string     `json:"message"`
+	Plan    string     `json:"plan"` // free | pro | max
+	UserID  string     `json:"user_id"`
 	History []ChatTurn `json:"history,omitempty"`
 }
 
@@ -28,13 +28,13 @@ type ChatTurn struct {
 
 // ChatResponse is the copilot reply.
 type ChatResponse struct {
-	Reply               string  `json:"reply"`
-	Text                string  `json:"text"` // alias for Reply (frontend expects "text")
-	Confidence          float64 `json:"confidence"` // 0-1
-	Provider            string  `json:"provider"`   // free | openai | anthropic | gemini
-	NeedsTicket         bool    `json:"needs_ticket"`
-	TicketReason        string  `json:"ticket_reason,omitempty"`
-	LimitReached        bool    `json:"limit_reached,omitempty"`
+	Reply        string  `json:"reply"`
+	Text         string  `json:"text"`       // alias for Reply (frontend expects "text")
+	Confidence   float64 `json:"confidence"` // 0-1
+	Provider     string  `json:"provider"`   // free | openai | anthropic | gemini
+	NeedsTicket  bool    `json:"needs_ticket"`
+	TicketReason string  `json:"ticket_reason,omitempty"`
+	LimitReached bool    `json:"limit_reached,omitempty"`
 }
 
 // Copilot routes chat by plan tier to the appropriate model.
@@ -285,7 +285,7 @@ func (c *Copilot) callGemini(ctx context.Context, req ChatRequest) (string, erro
 	})
 	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 	return postJSON(ctx, url, map[string]string{
-		"Content-Type":  "application/json",
+		"Content-Type":   "application/json",
 		"X-Goog-Api-Key": c.geminiKey,
 	}, body, func(b []byte) (string, error) {
 		var r struct {

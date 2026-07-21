@@ -36,10 +36,12 @@ echo ""
 
 # ── Create schema_migrations tracking table ────────────────
 run_sql() {
+    local sql="$1"
+    shift
     if [ "$USE_DOCKER" = true ]; then
-        docker compose exec -T postgres psql -U postgres -d finflow -c "$1" 2>&1
+        docker compose exec -T postgres psql -U postgres -d finflow -c "$sql" "$@" 2>&1
     else
-        psql "$DATABASE_URL" -c "$1" 2>&1
+        psql "$DATABASE_URL" -c "$sql" "$@" 2>&1
     fi
 }
 
@@ -72,9 +74,9 @@ for migration in "$MIGRATIONS_DIR"/*.sql; do
         continue
     fi
     
-    # Check if already applied (use psql variable to prevent SQL injection)
-    already=$(run_sql "SELECT COUNT(*) FROM schema_migrations WHERE filename = '"$filename"';" 2>/dev/null | grep -oE '[0-9]+' | head -1)
-    
+    # Check if already applied using psql variable binding (prevents SQL injection)
+    already=$(run_sql "SELECT COUNT(*) FROM schema_migrations WHERE filename = :'v1';" -v v1="$filename" 2>/dev/null | grep -oE '[0-9]+' | head -1)
+
     if [ "${already:-0}" -gt 0 ]; then
         echo -e "  $filename ... ${YELLOW}SKIPPED (already applied)${NC}"
         ((SKIPPED++))
@@ -84,8 +86,8 @@ for migration in "$MIGRATIONS_DIR"/*.sql; do
     echo -n "  Running $filename ... "
 
     if run_file "$migration" > /dev/null 2>&1; then
-        # Record as applied (filename validated above, safe for interpolation)
-        run_sql "INSERT INTO schema_migrations (filename) VALUES ('"$filename"');" > /dev/null 2>&1
+        # Record as applied using psql variable binding (prevents SQL injection)
+        run_sql "INSERT INTO schema_migrations (filename) VALUES (:'v1');" -v v1="$filename" > /dev/null 2>&1
         echo -e "${GREEN}✓${NC}"
         ((MIGRATION_COUNT++))
     else

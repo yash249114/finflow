@@ -11,23 +11,23 @@ import (
 
 // TelemetryEvent is a single observability signal emitted by any FinFlow service.
 type TelemetryEvent struct {
-	ID          string            `json:"id"`
-	Service     string            `json:"service"`  // api | ml | frontend | worker
-	Kind        string            `json:"kind"`     // request | dependency | model | job | incident
-	Operation   string            `json:"operation"` // e.g. forecast, classify, db_query, smtp
-	Status      string            `json:"status"`   // ok | degraded | error
-	LatencyMs   float64           `json:"latency_ms"`
-	Error       string            `json:"error,omitempty"`
-	Confidence  float64           `json:"confidence,omitempty"`  // model confidence / forecast confidence 0-1
-	DriftScore  float64           `json:"drift_score,omitempty"` // 0-1, higher = more drift
-	Meta        map[string]string `json:"meta,omitempty"`
-	Timestamp   time.Time         `json:"timestamp"`
+	ID         string            `json:"id"`
+	Service    string            `json:"service"`   // api | ml | frontend | worker
+	Kind       string            `json:"kind"`      // request | dependency | model | job | incident
+	Operation  string            `json:"operation"` // e.g. forecast, classify, db_query, smtp
+	Status     string            `json:"status"`    // ok | degraded | error
+	LatencyMs  float64           `json:"latency_ms"`
+	Error      string            `json:"error,omitempty"`
+	Confidence float64           `json:"confidence,omitempty"`  // model confidence / forecast confidence 0-1
+	DriftScore float64           `json:"drift_score,omitempty"` // 0-1, higher = more drift
+	Meta       map[string]string `json:"meta,omitempty"`
+	Timestamp  time.Time         `json:"timestamp"`
 }
 
 // Publisher emits telemetry onto a Redis Stream for the AIOps worker to consume.
 type Publisher struct {
-	rdb    *redis.Client
-	stream string
+	rdb     *redis.Client
+	stream  string
 	service string
 }
 

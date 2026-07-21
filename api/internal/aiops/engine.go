@@ -10,16 +10,16 @@ import (
 
 // HealthScore is a 0-100 aggregate health rating of the platform.
 type HealthScore struct {
-	Score      int       `json:"score"`      // 0-100, higher is healthier
-	Status     string    `json:"status"`     // healthy | degraded | critical
+	Score      int                        `json:"score"`  // 0-100, higher is healthier
+	Status     string                     `json:"status"` // healthy | degraded | critical
 	Components map[string]ComponentHealth `json:"components"`
-	ComputedAt time.Time `json:"computed_at"`
+	ComputedAt time.Time                  `json:"computed_at"`
 }
 
 // ComponentHealth is the per-service/dependency health breakdown.
 type ComponentHealth struct {
 	Score      int     `json:"score"`
-	ErrorRate  float64 `json:"error_rate"`  // 0-1 over window
+	ErrorRate  float64 `json:"error_rate"` // 0-1 over window
 	P95Latency float64 `json:"p95_latency_ms"`
 	Drift      float64 `json:"drift_score"`
 	Notes      string  `json:"notes,omitempty"`
@@ -141,9 +141,9 @@ func (w *Window) ComputeHealth() HealthScore {
 
 func scoreComponent(errorRate, p95, drift float64) int {
 	score := 100.0
-	score -= errorRate * 100      // each 1% error rate -1 point
+	score -= errorRate * 100           // each 1% error rate -1 point
 	score -= math.Max(0, p95-300) / 20 // penalty above 300ms p95
-	score -= drift * 30           // drift penalty
+	score -= drift * 30                // drift penalty
 	if score < 0 {
 		score = 0
 	}
@@ -155,13 +155,13 @@ func scoreComponent(errorRate, p95, drift float64) int {
 
 // Incident is a detected anomaly requiring attention.
 type Incident struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Severity    string    `json:"severity"` // low | medium | high | critical
-	Service     string    `json:"service"`
-	RootCause   string    `json:"root_cause"`
-	Evidence    []string  `json:"evidence"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	Severity  string    `json:"severity"` // low | medium | high | critical
+	Service   string    `json:"service"`
+	RootCause string    `json:"root_cause"`
+	Evidence  []string  `json:"evidence"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // DetectIncidents scans the window and returns incidents (RCA-lite).
@@ -247,10 +247,10 @@ func fmtErr(k string, v float64) string {
 // IncidentRecord is a stored incident with resolution tracking.
 type IncidentRecord struct {
 	Incident
-	Resolved    bool      `json:"resolved"`
-	ResolvedAt  *time.Time `json:"resolved_at,omitempty"`
-	ResolvedBy  string    `json:"resolved_by,omitempty"`
-	Timeline    []TimelineEntry `json:"timeline,omitempty"`
+	Resolved   bool            `json:"resolved"`
+	ResolvedAt *time.Time      `json:"resolved_at,omitempty"`
+	ResolvedBy string          `json:"resolved_by,omitempty"`
+	Timeline   []TimelineEntry `json:"timeline,omitempty"`
 }
 
 // TimelineEntry is a single event in an incident's lifecycle.
@@ -366,8 +366,8 @@ func (m *IncidentMemory) Unresolved() []IncidentRecord {
 // Stats returns aggregate incident statistics.
 func (m *IncidentMemory) Stats() IncidentStats {
 	stats := IncidentStats{
-		Total:    len(m.incidents),
-		Resolved: 0,
+		Total:      len(m.incidents),
+		Resolved:   0,
 		BySeverity: map[string]int{},
 		ByService:  map[string]int{},
 	}
@@ -386,9 +386,9 @@ func (m *IncidentMemory) Stats() IncidentStats {
 
 // IncidentStats is aggregate incident data for reporting.
 type IncidentStats struct {
-	Total         int            `json:"total"`
-	Resolved      int            `json:"resolved"`
-	ResolutionRate float64       `json:"resolution_rate"`
-	BySeverity    map[string]int `json:"by_severity"`
-	ByService     map[string]int `json:"by_service"`
+	Total          int            `json:"total"`
+	Resolved       int            `json:"resolved"`
+	ResolutionRate float64        `json:"resolution_rate"`
+	BySeverity     map[string]int `json:"by_severity"`
+	ByService      map[string]int `json:"by_service"`
 }

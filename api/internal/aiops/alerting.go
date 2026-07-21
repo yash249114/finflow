@@ -17,24 +17,24 @@ import (
 // Alerter dispatches incident notifications via email, GitHub draft issues,
 // Web3Forms support tickets, and a self-reporting Redis stream.
 type Alerter struct {
-	cfg      AlertConfig
-	redis    *redis.Client
+	cfg          AlertConfig
+	redis        *redis.Client
 	reportStream string
 	httpClient   *http.Client
 }
 
 // AlertConfig carries alert destinations.
 type AlertConfig struct {
-	EmailFrom   string
-	SMTPHost    string
-	SMTPPort    int
-	SMTPUser    string
-	SMTPPass    string
-	EmailTo     string
-	GitHubToken string
-	GitHubOwner string
-	GitHubRepo  string
-	OwnerEmail  string
+	EmailFrom    string
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPass     string
+	EmailTo      string
+	GitHubToken  string
+	GitHubOwner  string
+	GitHubRepo   string
+	OwnerEmail   string
 	Web3FormsKey string // Web3Forms access key for support tickets
 }
 
@@ -122,13 +122,13 @@ func (a *Alerter) Report(ctx context.Context, inc Incident, issueURL string) {
 	_ = a.redis.XAdd(ctx, &redis.XAddArgs{
 		Stream: a.reportStream,
 		Values: map[string]interface{}{
-			"type":      "incident_report",
-			"service":   inc.Service,
-			"severity":  inc.Severity,
-			"title":     inc.Title,
+			"type":       "incident_report",
+			"service":    inc.Service,
+			"severity":   inc.Severity,
+			"title":      inc.Title,
 			"root_cause": inc.RootCause,
-			"issue_url": issueURL,
-			"at":        time.Now().UTC().Format(time.RFC3339),
+			"issue_url":  issueURL,
+			"at":         time.Now().UTC().Format(time.RFC3339),
 		},
 	})
 }

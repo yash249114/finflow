@@ -140,7 +140,6 @@ function LoginForm() {
       
       if (oauthError) throw oauthError;
     } catch (err) {
-      console.error("[OAuth Debug] Google login error:", err);
       const message = err instanceof Error ? err.message : "Google OAuth sign-in failed. Please try again.";
       setError(message);
       setLoading(false);
@@ -168,8 +167,7 @@ function LoginForm() {
         const data = await res.json();
         toast.error(data.error || "Failed to send password recovery email.");
       }
-    } catch (err) {
-      console.error("[Login Debug] Forgot password error:", err);
+    } catch {
       toast.error("Failed to send password recovery email.");
     } finally {
       setLoading(false);
@@ -191,8 +189,7 @@ function LoginForm() {
         const data = await res.json();
         toast.error(data.error || "Failed to send verification link.");
       }
-    } catch (err) {
-      console.error("[Login Debug] Resend verification error:", err);
+    } catch {
       toast.error("Failed to send verification link.");
     } finally {
       setLoading(false);
@@ -215,7 +212,6 @@ function LoginForm() {
           return;
         }
 
-        console.log("[Login Captcha] Verifying checkbox token server-side...");
         const verifyRes = await fetch("/api/verify-captcha", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -232,7 +228,6 @@ function LoginForm() {
           }
           return;
         }
-        console.log("[Login Captcha] Verification succeeded.");
       } else {
         console.warn("[Login Captcha] Site key missing, bypassing captcha check in development.");
       }
@@ -241,20 +236,11 @@ function LoginForm() {
       const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '');
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
-      console.log("[Login Debug] Initializing Supabase client. cleanUrl:", supabaseUrl);
       const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
-      console.log("[Login Debug] Attempting signInWithPassword for email:", email);
       const { data, error: apiError } = await supabase.auth.signInWithPassword({
         email,
         password,
-      });
-
-      console.log("[Login Debug] signInWithPassword result:", {
-        success: !apiError,
-        hasSession: !!data.session,
-        userEmail: data.session?.user?.email,
-        error: apiError?.message
       });
 
       if (apiError) {
@@ -290,16 +276,11 @@ function LoginForm() {
         // Silently ignore email dispatch errors
       });
 
-      const rawFrom = searchParams.get("from");
-      console.log(`[Login Debug] Successful session confirmed. Initiating redirect delay. rawFrom=[${rawFrom}], targetPath=[/dashboard]`);
-      
       // Wait a short duration (100ms) to ensure Supabase state propagation, cookie commit, and React context update complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      console.log("[Login Debug] Redirecting target navigation: /dashboard (using router.replace)");
       router.replace("/dashboard");
     } catch (err) {
-      console.error("[Login Debug] Login submission error:", err);
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(message);
       if (window.grecaptcha) {

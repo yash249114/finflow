@@ -30,33 +30,6 @@ type ParsedRow struct {
 	Source      string
 }
 
-// BatchInsert inserts multiple transactions atomically using a DB transaction.
-func (r *TransactionRepo) BatchInsert(ctx context.Context, userID string, rows []ParsedRow) (int, error) {
-	tx, err := r.pool.Begin(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("beginning transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	inserted := 0
-	for _, row := range rows {
-		_, err := tx.Exec(ctx,
-			`INSERT INTO transactions (user_id, date, description, amount, category, source)
-			 VALUES ($1, $2, $3, $4, $5, $6)`,
-			userID, row.Date, row.Description, row.Amount, row.Category, row.Source,
-		)
-		if err != nil {
-			return 0, fmt.Errorf("inserting row (date=%s, desc=%s): %w", row.Date, row.Description, err)
-		}
-		inserted++
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return 0, fmt.Errorf("committing batch insert: %w", err)
-	}
-	return inserted, nil
-}
-
 // BulkCopyInsert inserts multiple transactions using pgx CopyFrom protocol for high performance.
 func (r *TransactionRepo) BulkCopyInsert(ctx context.Context, userID string, rows []ParsedRow) (int, error) {
 	if len(rows) == 0 {

@@ -94,23 +94,23 @@ func (h *ForecastHandler) GetForecast(c *gin.Context) {
 
 // ForecastQualityMetrics holds accuracy and quality metrics for forecasts.
 type ForecastQualityMetrics struct {
-	MeanAbsoluteError   float64            `json:"mean_absolute_error"`
-	MeanSquaredError    float64            `json:"mean_squared_error"`
-	RootMeanSquareError float64            `json:"root_mean_square_error"`
-	MeanAbsolutePctErr  float64            `json:"mean_absolute_pct_error"`
-	R2Score             float64            `json:"r2_score"`
-	DirectionAccuracy   float64            `json:"direction_accuracy"` // % of times direction was correct
-	ConfidenceCoverage  float64            `json:"confidence_coverage"` // % of actuals within confidence interval
-	ForecastCount       int                `json:"forecast_count"`
+	MeanAbsoluteError   float64                `json:"mean_absolute_error"`
+	MeanSquaredError    float64                `json:"mean_squared_error"`
+	RootMeanSquareError float64                `json:"root_mean_square_error"`
+	MeanAbsolutePctErr  float64                `json:"mean_absolute_pct_error"`
+	R2Score             float64                `json:"r2_score"`
+	DirectionAccuracy   float64                `json:"direction_accuracy"`  // % of times direction was correct
+	ConfidenceCoverage  float64                `json:"confidence_coverage"` // % of actuals within confidence interval
+	ForecastCount       int                    `json:"forecast_count"`
 	ByHorizon           map[int]HorizonMetrics `json:"by_horizon,omitempty"`
-	ComputedAt          time.Time          `json:"computed_at"`
+	ComputedAt          time.Time              `json:"computed_at"`
 }
 
 // HorizonMetrics is quality metrics for a specific forecast horizon.
 type HorizonMetrics struct {
-	MAE  float64 `json:"mae"`
-	MAPE float64 `json:"mape"`
-	Count int    `json:"count"`
+	MAE   float64 `json:"mae"`
+	MAPE  float64 `json:"mape"`
+	Count int     `json:"count"`
 }
 
 // GetForecastQuality computes forecast accuracy metrics by comparing past forecasts with actuals.
@@ -127,9 +127,9 @@ func (h *ForecastHandler) GetForecastQuality(c *gin.Context) {
 
 	if len(transactions) < 14 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":         "insufficient data for quality metrics",
+			"error":            "insufficient data for quality metrics",
 			"minimum_required": 14,
-			"current_count": len(transactions),
+			"current_count":    len(transactions),
 		})
 		return
 	}
@@ -166,8 +166,8 @@ func (h *ForecastHandler) GetForecastQuality(c *gin.Context) {
 	forecastPoints, ok := forecastData["forecast"].([]interface{})
 	if !ok || len(forecastPoints) == 0 {
 		c.JSON(http.StatusOK, ForecastQualityMetrics{
-			ForecastCount:  0,
-			ComputedAt:     time.Now().UTC(),
+			ForecastCount: 0,
+			ComputedAt:    time.Now().UTC(),
 		})
 		return
 	}
@@ -289,7 +289,7 @@ func computeForecastQuality(actuals map[string]float64, forecastPoints []interfa
 		}
 
 		if ssTot > 0 {
-			metrics.R2Score = 1 - (sumSq/ssTot)
+			metrics.R2Score = 1 - (sumSq / ssTot)
 			if metrics.R2Score < 0 {
 				metrics.R2Score = 0
 			}

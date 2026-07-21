@@ -1,11 +1,9 @@
 # ml-service/services/categorizer.py
 """Transaction categorization using TF-IDF + LogisticRegression."""
 
-import json
 import logging
 import os
 from pathlib import Path
-import tempfile
 
 import joblib
 import numpy as np
@@ -20,9 +18,6 @@ def _load_model_safely(path: Path):
     joblib uses its own wrapper format over pickle, so we load via joblib
     and then verify the loaded object is a trusted sklearn Pipeline type.
     """
-    import joblib
-    from sklearn.pipeline import Pipeline
-
     model = joblib.load(path)
 
     if not isinstance(model, Pipeline):

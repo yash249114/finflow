@@ -55,10 +55,10 @@ func (h *RecommendationsHandler) GetRecommendations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"recommendations": recs,
 		"snapshot": gin.H{
-			"total_income":       snapshot.TotalIncome,
-			"total_expenses":     snapshot.TotalExpenses,
-			"net_cash_flow":      snapshot.NetCashFlow,
-			"transaction_count":  snapshot.TransactionCount,
+			"total_income":      snapshot.TotalIncome,
+			"total_expenses":    snapshot.TotalExpenses,
+			"net_cash_flow":     snapshot.NetCashFlow,
+			"transaction_count": snapshot.TransactionCount,
 		},
 	})
 }

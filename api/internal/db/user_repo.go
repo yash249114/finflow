@@ -21,40 +21,6 @@ func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	return &UserRepo{pool: pool}
 }
 
-// Create inserts a new user and returns it.
-func (r *UserRepo) Create(ctx context.Context, id, email, fullName string) (*models.User, error) {
-	user := &models.User{}
-	err := r.pool.QueryRow(ctx,
-		`INSERT INTO users (id, email, full_name)
-		 VALUES ($1, $2, $3)
-		 RETURNING id, email, full_name, plan, lemonsqueezy_customer_id, created_at`,
-		id, email, fullName,
-	).Scan(&user.ID, &user.Email, &user.FullName,
-		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
-	if err != nil {
-		return nil, fmt.Errorf("inserting user: %w", err)
-	}
-	return user, nil
-}
-
-// GetByEmail retrieves a user by email address.
-func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	user := &models.User{}
-	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
-		 FROM users WHERE email = $1`,
-		email,
-	).Scan(&user.ID, &user.Email, &user.FullName,
-		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("querying user by email: %w", err)
-	}
-	return user, nil
-}
-
 // GetByID retrieves a user by their UUID.
 func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
 	user := &models.User{}
@@ -113,62 +79,6 @@ func (r *UserRepo) GetByLemonSqueezyCustomerID(ctx context.Context, customerID s
 		return nil, fmt.Errorf("querying user by lemonsqueezy customer id: %w", err)
 	}
 	return user, nil
-}
-
-// ─── Refresh Token Operations ─────────────────────────────
-
-// SaveRefreshToken stores a hashed refresh token in the database.
-func (r *UserRepo) SaveRefreshToken(ctx context.Context, userID, tokenHash string, expiresAt interface{}) error {
-	_, err := r.pool.Exec(ctx,
-		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-		 VALUES ($1, $2, $3)`,
-		userID, tokenHash, expiresAt,
-	)
-	if err != nil {
-		return fmt.Errorf("saving refresh token: %w", err)
-	}
-	return nil
-}
-
-// GetRefreshToken retrieves a refresh token record by its hash.
-func (r *UserRepo) GetRefreshToken(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
-	rt := &models.RefreshToken{}
-	err := r.pool.QueryRow(ctx,
-		`SELECT id, user_id, token_hash, expires_at, created_at
-		 FROM refresh_tokens WHERE token_hash = $1`,
-		tokenHash,
-	).Scan(&rt.ID, &rt.UserID, &rt.TokenHash, &rt.ExpiresAt, &rt.CreatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("querying refresh token: %w", err)
-	}
-	return rt, nil
-}
-
-// DeleteRefreshToken removes a specific refresh token by its hash.
-func (r *UserRepo) DeleteRefreshToken(ctx context.Context, tokenHash string) error {
-	_, err := r.pool.Exec(ctx,
-		`DELETE FROM refresh_tokens WHERE token_hash = $1`,
-		tokenHash,
-	)
-	if err != nil {
-		return fmt.Errorf("deleting refresh token: %w", err)
-	}
-	return nil
-}
-
-// DeleteAllRefreshTokens removes all refresh tokens for a user.
-func (r *UserRepo) DeleteAllRefreshTokens(ctx context.Context, userID string) error {
-	_, err := r.pool.Exec(ctx,
-		`DELETE FROM refresh_tokens WHERE user_id = $1`,
-		userID,
-	)
-	if err != nil {
-		return fmt.Errorf("deleting all refresh tokens: %w", err)
-	}
-	return nil
 }
 
 // ─── Webhook Events ───────────────────────────────────────

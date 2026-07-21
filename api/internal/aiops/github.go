@@ -13,8 +13,8 @@ import (
 // createGitHubIssue opens an issue via the GitHub REST API and returns its HTML URL.
 func createGitHubIssue(ctx context.Context, cfg AlertConfig, title, body string) (string, error) {
 	payload, err := json.Marshal(map[string]interface{}{
-		"title": "[AIOps] " + title,
-		"body":  body,
+		"title":  "[AIOps] " + title,
+		"body":   body,
 		"labels": []string{"aiops", "auto-triage"},
 	})
 	if err != nil {

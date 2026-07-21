@@ -104,7 +104,6 @@ export async function POST(req: NextRequest) {
 
     // 3. Fallback to mock simulation mode if no API keys are loaded
     if (!geminiKey && !openaiKey && !anthropicKey) {
-      console.log("[AI API Route] No API Keys configured. Triggering fallback simulation responses.");
       
       const q = message.toLowerCase();
       if (q.includes("forecast") || q.includes("runway") || q.includes("prediction")) {
@@ -165,7 +164,6 @@ export async function POST(req: NextRequest) {
     // Route 1: Anthropic (Claude 3.5 Sonnet) - Gated for Max / fallback for Pro
     if (plan === "max" && anthropicKey && !completed) {
       try {
-        console.log("[AI API Route] Routing to Anthropic Claude 3.5 Sonnet");
         const messagesInput = history.map((h: ChatMessage) => ({
           role: h.sender === "user" ? "user" : "assistant",
           content: h.text,
@@ -202,7 +200,6 @@ export async function POST(req: NextRequest) {
     // Route 2: OpenAI (GPT-4o or GPT-4o-mini) - Gated for Pro/Max
     if ((plan === "pro" || plan === "max") && openaiKey && !completed) {
       try {
-        console.log("[AI API Route] Routing to OpenAI GPT-4o-mini");
         const messagesInput = [
           { role: "system", content: SYSTEM_PROMPT },
           ...history.map((h: ChatMessage) => ({
@@ -241,7 +238,6 @@ export async function POST(req: NextRequest) {
     // Route 3: Gemini Flash (via Google Generative Language REST Endpoint) - Pro/Max only
     if (geminiKey && !completed && (plan === "pro" || plan === "max")) {
       try {
-        console.log("[AI API Route] Routing to Google Gemini-1.5-Flash");
         
         // Format chat history for Gemini's contents schema
         const contentsInput = [];

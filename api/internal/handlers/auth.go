@@ -48,8 +48,12 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 // Me returns the current authenticated user's profile info from the DB.
 func (h *AuthHandler) Me(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	user, err := h.userRepo.GetByID(c.Request.Context(), userID.(string))
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
 	if err != nil || user == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user profile not found"})
 		return

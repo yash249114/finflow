@@ -11,9 +11,9 @@ type Recommendation struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Category    string    `json:"category"` // savings | revenue | risk | efficiency
-	Priority    string    `json:"priority"` // low | medium | high | critical
-	Impact      string    `json:"impact"`   // estimated financial impact
+	Category    string    `json:"category"`   // savings | revenue | risk | efficiency
+	Priority    string    `json:"priority"`   // low | medium | high | critical
+	Impact      string    `json:"impact"`     // estimated financial impact
 	Confidence  float64   `json:"confidence"` // 0-1
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -33,14 +33,14 @@ func NewRecommendationEngine(maxRecs int) *RecommendationEngine {
 
 // FinancialSnapshot holds user's financial data for analysis.
 type FinancialSnapshot struct {
-	TotalIncome      float64           `json:"total_income"`
-	TotalExpenses    float64           `json:"total_expenses"`
-	NetCashFlow      float64           `json:"net_cash_flow"`
+	TotalIncome      float64            `json:"total_income"`
+	TotalExpenses    float64            `json:"total_expenses"`
+	NetCashFlow      float64            `json:"net_cash_flow"`
 	CategoryTotals   map[string]float64 `json:"category_totals"`
-	TransactionCount int               `json:"transaction_count"`
-	AvgTransaction   float64           `json:"avg_transaction"`
-	HighValueTxCount int               `json:"high_value_tx_count"`
-	RecurringTxCount int               `json:"recurring_tx_count"`
+	TransactionCount int                `json:"transaction_count"`
+	AvgTransaction   float64            `json:"avg_transaction"`
+	HighValueTxCount int                `json:"high_value_tx_count"`
+	RecurringTxCount int                `json:"recurring_tx_count"`
 }
 
 // GenerateRecommendations analyzes financial data and returns actionable suggestions.

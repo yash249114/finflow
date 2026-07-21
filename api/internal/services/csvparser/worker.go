@@ -19,18 +19,18 @@ import (
 
 // UploadStatus represents the real-time processing metrics of a CSV ingestion.
 type UploadStatus struct {
-	UploadID            string        `json:"upload_id"`
-	UserID              string        `json:"user_id"`
-	Status              string        `json:"status"` // pending, processing, completed, failed
-	FileName            string        `json:"file_name"`
-	TotalRows           int           `json:"total_rows"`
-	ProcessedRows       int           `json:"processed_rows"`
-	FailedRows          int           `json:"failed_rows"`
-	StartTime           time.Time     `json:"start_time"`
-	EndTime             *time.Time    `json:"end_time,omitempty"`
-	Speed               float64       `json:"speed"` // rows/sec
-	EstimatedRemaining  float64       `json:"estimated_remaining"` // seconds
-	Errors              []UploadError `json:"errors"`
+	UploadID           string        `json:"upload_id"`
+	UserID             string        `json:"user_id"`
+	Status             string        `json:"status"` // pending, processing, completed, failed
+	FileName           string        `json:"file_name"`
+	TotalRows          int           `json:"total_rows"`
+	ProcessedRows      int           `json:"processed_rows"`
+	FailedRows         int           `json:"failed_rows"`
+	StartTime          time.Time     `json:"start_time"`
+	EndTime            *time.Time    `json:"end_time,omitempty"`
+	Speed              float64       `json:"speed"`               // rows/sec
+	EstimatedRemaining float64       `json:"estimated_remaining"` // seconds
+	Errors             []UploadError `json:"errors"`
 }
 
 type UploadError struct {

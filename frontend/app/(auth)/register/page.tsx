@@ -151,7 +151,6 @@ export default function RegisterPage() {
       });
       if (oauthError) throw oauthError;
     } catch (err) {
-      console.error("[OAuth Debug] Google sign-up error:", err);
       const message = err instanceof Error ? err.message : "Google OAuth sign-in failed. Please try again.";
       setError(message);
       setLoading(false);
@@ -190,7 +189,6 @@ export default function RegisterPage() {
           return;
         }
 
-        console.log("[Register Captcha] Verifying checkbox token server-side...");
         const verifyRes = await fetch("/api/verify-captcha", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -207,14 +205,12 @@ export default function RegisterPage() {
           }
           return;
         }
-        console.log("[Register Captcha] Verification succeeded.");
       } else {
         console.warn("[Register Captcha] Site key missing, bypassing captcha check in development.");
       }
 
-      console.log("[Register Debug] Initiating signUp call to Supabase for email:", email);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
-      const { data, error: apiError } = await supabase.auth.signUp({
+      const { error: apiError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -224,13 +220,6 @@ export default function RegisterPage() {
             plan: 'free',
           }
         }
-      });
-
-      console.log("[Register Debug] signUp response:", {
-        success: !apiError,
-        hasUser: !!data?.user,
-        userEmail: data?.user?.email,
-        error: apiError?.message
       });
 
       if (apiError) {
@@ -252,15 +241,11 @@ export default function RegisterPage() {
           to: email,
           type: "verification"
         })
-      }).catch((err) => {
-        console.error("[Register Debug] Failed to send verification email:", err);
-      });
+      }).catch(() => {});
 
       // Redirect to login page so they can sign in and obtain fresh session cookies
-      console.log("[Register Debug] Redirecting to /login after signup");
       router.push("/login");
     } catch (err) {
-      console.error("[Register Debug] Signup handler error:", err);
       const message = err instanceof Error ? err.message : "Unable to connect to registration services.";
       setError(message);
       if (window.grecaptcha) {

@@ -16,10 +16,10 @@ import (
 
 // dateFormats lists supported date formats for CSV parsing.
 var dateFormats = []string{
-	"2006-01-02",  // YYYY-MM-DD
-	"01/02/2006",  // MM/DD/YYYY
-	"1/2/2006",    // M/D/YYYY
-	"02-01-2006",  // DD-MM-YYYY
+	"2006-01-02", // YYYY-MM-DD
+	"01/02/2006", // MM/DD/YYYY
+	"1/2/2006",   // M/D/YYYY
+	"02-01-2006", // DD-MM-YYYY
 }
 
 // ParseResult contains the outcome of parsing a CSV file.

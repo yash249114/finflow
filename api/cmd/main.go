@@ -15,7 +15,6 @@ import (
 	"github.com/finflow/api/internal/db"
 	"github.com/finflow/api/internal/handlers"
 	"github.com/finflow/api/internal/middleware"
-	ratelimit "github.com/finflow/api/internal/middleware"
 	jwtService "github.com/finflow/api/internal/services/jwt"
 	"github.com/finflow/api/internal/services/mlclient"
 	"github.com/gin-contrib/cors"
@@ -118,14 +117,14 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	r.Use(ratelimit.RateLimit(cfg.RedisURL))
+	r.Use(middleware.RateLimit(cfg.RedisURL))
 
 	// ── Health ───────────────────────────────────────────
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"status":   "ok",
-			"service":  "finflow-api",
-			"time":     time.Now().UTC().Format(time.RFC3339),
+			"status":  "ok",
+			"service": "finflow-api",
+			"time":    time.Now().UTC().Format(time.RFC3339),
 		})
 	})
 
@@ -145,9 +144,9 @@ func main() {
 	r.GET("/api/aiops/health", func(c *gin.Context) {
 		h := aiopsWorker.Health()
 		c.JSON(http.StatusOK, gin.H{
-			"score":      h.Score,
-			"status":     h.Status,
-			"components": h.Components,
+			"score":       h.Score,
+			"status":      h.Status,
+			"components":  h.Components,
 			"computed_at": h.ComputedAt,
 		})
 	})

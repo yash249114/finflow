@@ -49,7 +49,6 @@ export async function POST(request: Request) {
         const redirectUrl = `${appUrl}/auth/callback`;
 
         if (type === "verification") {
-          console.log(`[Resend Admin] Generating signup confirmation link for ${to}...`);
           const { data, error } = await supabaseAdmin.auth.admin.generateLink({
             type: "invite",
             email: to,
@@ -72,7 +71,6 @@ export async function POST(request: Request) {
             </div>
           `;
         } else {
-          console.log(`[Resend Admin] Generating password recovery link for ${to}...`);
           const { data, error } = await supabaseAdmin.auth.admin.generateLink({
             type: "recovery",
             email: to,
@@ -108,7 +106,6 @@ export async function POST(request: Request) {
       `;
     }
 
-    console.log(`[Resend] Sending email of type ${type} to ${to}...`);
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {

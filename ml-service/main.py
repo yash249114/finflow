@@ -8,11 +8,13 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from models.schemas import HealthResponse
 from routes.classify import init_categorizer, router as classify_router
 from routes.forecast import router as forecast_router
+from routes.metrics import router as metrics_router
 from services.categorizer import Categorizer
 
 security = HTTPBearer(auto_error=False)
@@ -66,7 +68,6 @@ async def limit_body_size(request, call_next):
     """Reject requests with body larger than 10 MB."""
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 10 * 1024 * 1024:
-        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=413, content={"detail": "Request too large (max 10 MB)"}
         )
@@ -76,7 +77,6 @@ async def limit_body_size(request, call_next):
 # ── Routes ─────────────────────────────────────────────────
 app.include_router(classify_router, dependencies=[Depends(verify_api_key)])
 app.include_router(forecast_router, dependencies=[Depends(verify_api_key)])
-from routes.metrics import router as metrics_router
 app.include_router(metrics_router, dependencies=[Depends(verify_api_key)])
 
 

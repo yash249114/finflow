@@ -23,8 +23,6 @@ export async function POST(request: Request) {
     const response = await fetch(verifyUrl, { method: "POST" });
     const data = await response.json();
 
-    console.log("[Captcha API] Google verification response:", data);
-
     if (data.success && (data.score === undefined || data.score >= 0.5)) {
       return NextResponse.json({ success: true });
     }

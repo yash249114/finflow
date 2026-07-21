@@ -51,7 +51,6 @@ export async function middleware(request: NextRequest) {
   )
 
   // Retrieve authentic user session
-  console.log(`[Middleware Debug] Checking user session for pathname: ${pathname}`)
   const { data: { user } } = await supabase.auth.getUser()
 
   const isProtectedPath =
@@ -68,7 +67,6 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath) {
     if (!user) {
-      console.log(`[Middleware Debug] Protected path access denied. No user found.`);
       const relativeFrom = '/' + pathname.replace(/^\/+/, '')
       const loginUrl = new URL('/login', request.url)
       loginUrl.search = `?from=${relativeFrom}`
@@ -81,7 +79,6 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!user.email_confirmed_at) {
-      console.log(`[Middleware Debug] Protected path access denied. Email not confirmed. user=[${user.email}]`);
       const loginUrl = new URL('/login', request.url)
       loginUrl.search = `?error=email-not-confirmed`
       
@@ -96,7 +93,6 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/admin')) {
       const isAdmin = user.email === ADMIN_EMAIL || user.user_metadata?.role === 'admin'
       if (!isAdmin) {
-        console.log(`[Middleware Debug] Admin path access denied for user: ${user.email}. Not authorized.`);
         const dashboardUrl = new URL('/dashboard', request.url)
         const redirectResponse = NextResponse.redirect(dashboardUrl)
         response.cookies.getAll().forEach((cookie) => {
@@ -108,7 +104,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthPath && user && user.email_confirmed_at) {
-    console.log(`[Middleware Debug] Auth path access with active verified user session. Redirecting to dashboard.`);
     const redirectUrl = new URL('/dashboard', request.url)
     const redirectResponse = NextResponse.redirect(redirectUrl)
     response.cookies.getAll().forEach((cookie) => {
