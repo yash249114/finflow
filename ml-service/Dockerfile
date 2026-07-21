@@ -1,13 +1,13 @@
 # ml-service/Dockerfile
 # Multi-stage build to minimize attack surface in runtime image
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 RUN addgroup --system --gid 1001 mluser && \
     adduser --system --uid 1001 mluser
