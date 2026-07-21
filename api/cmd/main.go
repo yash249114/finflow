@@ -67,16 +67,17 @@ func main() {
 	telemetry := aiops.NewPublisher(rdb, cfg.TelemetryStream, "api")
 	telemetryPub = telemetry
 	alerter := aiops.NewAlerter(aiops.AlertConfig{
-		EmailFrom:   cfg.AlertEmailFrom,
-		SMTPHost:    cfg.SMTPHost,
-		SMTPPort:    cfg.SMTPPort,
-		SMTPUser:    cfg.SMTPUser,
-		SMTPPass:    cfg.SMTPPassword,
-		EmailTo:     cfg.AlertEmailTo,
-		GitHubToken: cfg.GitHubToken,
-		GitHubOwner: cfg.GitHubOwner,
-		GitHubRepo:  cfg.GitHubRepo,
-		OwnerEmail:  cfg.AIOpsOwnerEmail,
+		EmailFrom:    cfg.AlertEmailFrom,
+		SMTPHost:     cfg.SMTPHost,
+		SMTPPort:     cfg.SMTPPort,
+		SMTPUser:     cfg.SMTPUser,
+		SMTPPass:     cfg.SMTPPassword,
+		EmailTo:      cfg.AlertEmailTo,
+		GitHubToken:  cfg.GitHubToken,
+		GitHubOwner:  cfg.GitHubOwner,
+		GitHubRepo:   cfg.GitHubRepo,
+		OwnerEmail:   cfg.AIOpsOwnerEmail,
+		Web3FormsKey: cfg.Web3FormsKey,
 	}, rdb, cfg.TelemetryStream+":reports")
 	copilot := aiops.NewCopilot(cfg.OpenAIAPIKey, cfg.AnthropicAPIKey, cfg.GeminiAPIKey)
 	aiopsWorker := aiops.NewWorker(rdb, cfg.TelemetryStream, cfg.TelemetryStream+":reports", telemetry, alerter)
@@ -96,6 +97,7 @@ func main() {
 	forecastHandler := handlers.NewForecastHandler(txRepo, mlClient, rdb)
 	billingHandler := handlers.NewBillingHandler(userRepo, cfg.LemonSqueezyAPIKey, cfg.LemonSqueezyStoreID, cfg.LemonSqueezyVariantID, cfg.LemonSqueezyWebhookSecret, cfg.FrontendURL)
 	aiChatHandler := handlers.NewAIChatHandler(copilot, alerter)
+	recommendationsHandler := handlers.NewRecommendationsHandler(txRepo)
 
 	// ── Router ───────────────────────────────────────────
 	if cfg.AppEnv == "production" {
@@ -161,6 +163,9 @@ func main() {
 		// AI Copilot (tiered auth, all plans supported)
 		protected.POST("/ai/chat", aiChatHandler.Chat)
 
+		// AI Recommendations (proactive financial suggestions)
+		protected.GET("/ai/recommendations", recommendationsHandler.GetRecommendations)
+
 		// Transactions
 		protected.POST("/transactions/upload", uploadHandler.Upload)
 		protected.POST("/transactions/upload/start", uploadHandler.StartUpload)
@@ -174,6 +179,7 @@ func main() {
 		forecast.Use(middleware.RequirePro())
 		{
 			forecast.GET("", forecastHandler.GetForecast)
+			forecast.GET("/quality", forecastHandler.GetForecastQuality)
 		}
 
 		// Billing

@@ -29,10 +29,12 @@ type ChatTurn struct {
 // ChatResponse is the copilot reply.
 type ChatResponse struct {
 	Reply               string  `json:"reply"`
+	Text                string  `json:"text"` // alias for Reply (frontend expects "text")
 	Confidence          float64 `json:"confidence"` // 0-1
 	Provider            string  `json:"provider"`   // free | openai | anthropic | gemini
 	NeedsTicket         bool    `json:"needs_ticket"`
 	TicketReason        string  `json:"ticket_reason,omitempty"`
+	LimitReached        bool    `json:"limit_reached,omitempty"`
 }
 
 // Copilot routes chat by plan tier to the appropriate model.
@@ -99,6 +101,7 @@ func (c *Copilot) finalize(reply, provider string, req ChatRequest) ChatResponse
 	needs := conf < 0.4 || isUnresolved(reply)
 	r := ChatResponse{
 		Reply:       reply,
+		Text:        reply,
 		Confidence:  conf,
 		Provider:    provider,
 		NeedsTicket: needs,
@@ -109,25 +112,73 @@ func (c *Copilot) finalize(reply, provider string, req ChatRequest) ChatResponse
 	return r
 }
 
-// freeTier provides deterministic, offline financial guidance.
+// freeTier provides deterministic, offline financial guidance with knowledge base.
 func (c *Copilot) freeTier(req ChatRequest) ChatResponse {
 	msg := strings.ToLower(req.Message)
 	reply := "I'm FinFlow's free copilot. I can summarize basics: upload transactions to get AI categorization, and check the forecast page for cash-flow projections. Upgrade to Pro for deeper insights."
 	conf := 0.6
 
-	switch {
-	case strings.Contains(msg, "runway"):
-		reply = "Runway is your cash balance divided by average monthly net burn. Connect more transactions to improve its accuracy. Pro tier computes this automatically."
-	case strings.Contains(msg, "anomal"):
-		reply = "Spending anomalies are flagged when a transaction deviates from your history. Use the dashboard's anomaly view after uploading data."
-	case strings.Contains(msg, "forecast") || strings.Contains(msg, "cash flow"):
-		reply = "Forecasts use your historical cash flow with seasonality. See /forecast. Pro/Max tiers add confidence intervals and drift monitoring."
-	case strings.Contains(msg, "refund") || strings.Contains(msg, "human") || strings.Contains(msg, "talk to"):
-		conf = 0.2
+	// Knowledge base: pattern-matched financial guidance
+	kb := []struct {
+		patterns []string
+		response string
+		conf     float64
+	}{
+		// Runway & Cash Management
+		{[]string{"runway", "how long", "cash last"}, "Runway is your cash balance divided by average monthly net burn. Formula: Runway = Current Cash / |Net Monthly Burn|. A healthy runway is 12-18 months. Connect more transactions to improve accuracy. Pro tier computes this automatically with projections.", 0.75},
+		{[]string{"cash flow", "cashflow", "money in", "money out"}, "Cash flow tracks money moving in and out. Positive cash flow means you're spending less than you earn. Negative means you're burning reserves. Upload your CSV to see your net cash flow breakdown by category.", 0.7},
+		{[]string{"burn rate", "burn", "monthly spend"}, "Burn rate is your average monthly spending minus income. There are two types: Gross burn (total expenses) and Net burn (expenses minus revenue). Track this weekly to catch spending spikes early.", 0.7},
+
+		// Forecasting & Projections
+		{[]string{"forecast", "predict", "projection", "future"}, "Forecasts use your historical cash flow with seasonality analysis. See /forecast for visual projections. Pro/Max tiers add confidence intervals and drift monitoring. Free tier provides basic trend extrapolation.", 0.65},
+		{[]string{"seasonality", "seasonal", "quarterly"}, "Seasonal patterns affect cash flow: Q4 often has higher expenses (bonuses, taxes), Q1 may see slower revenue. Upload 6+ months of data for accurate seasonal detection.", 0.7},
+
+		// Anomaly Detection
+		{[]string{"anomal", "unusual", "spike", "outlier", "weird"}, "Spending anomalies are flagged when a transaction deviates from your historical mean by 2+ standard deviations. Use the dashboard's anomaly view after uploading data. Pro tier provides real-time alerts.", 0.7},
+		{[]string{"fraud", "suspicious", "unauthorized"}, "If you suspect fraud: 1) Flag the transaction in the dashboard, 2) Contact your bank immediately, 3) Export the flagged transaction report for your records. FinFlow detects unusual patterns but cannot prevent unauthorized transactions.", 0.6},
+
+		// Budgeting & Planning
+		{[]string{"budget", "plan", "allocation"}, "Effective budgeting follows the 50/30/20 rule: 50% needs, 30% wants, 20% savings. For startups, aim for 40-50% on growth, 20-30% on operations, 10-20% on runway reserve. Upload transactions to see your actual allocation.", 0.7},
+		{[]string{"cut cost", "reduce spend", "save money", "trim"}, "Top cost optimization levers: 1) Review recurring subscriptions, 2) Negotiate annual contracts vs monthly, 3) Audit contractor vs full-time costs, 4) Check cloud infrastructure rightsizing. Use the copilot with specific transaction data for personalized recommendations.", 0.7},
+
+		// Financial Metrics
+		{[]string{"mrr", "monthly recurring", "recurring revenue"}, "MRR is your predictable monthly revenue from subscriptions. Calculate: MRR = sum of all active subscription values. Track MRR growth rate: 10-15% monthly is healthy for early stage, 5-10% for growth stage.", 0.75},
+		{[]string{"ltv", "lifetime value", "customer value"}, "Customer LTV = Average Revenue per User × Average Customer Lifespan. A healthy LTV:CAC ratio is 3:1 or higher. If below 1:1, you're losing money on each customer acquired.", 0.7},
+		{[]string{"cac", "acquisition cost", "cost to acquire"}, "CAC = Total Sales & Marketing Spend / Number of New Customers. Compare to LTV: if CAC > LTV, you have a unit economics problem. Aim for CAC payback period under 12 months.", 0.7},
+
+		// Taxes & Accounting
+		{[]string{"tax", "taxes", "quarterly", "irs"}, "Quarterly tax estimates are due: April 15, June 15, September 15, January 15. Set aside 25-30% of profit for federal taxes. Track deductible expenses (home office, equipment, software) separately.", 0.65},
+		{[]string{"bookkeep", "accounting", "ledger", "reconcil"}, "Good bookkeeping: 1) Categorize transactions weekly, 2) Reconcile bank statements monthly, 3) Keep receipts for expenses over $75, 4) Separate business and personal accounts. FinFlow auto-categorizes when you upload CSVs.", 0.7},
+
+		// Funding & Investment
+		{[]string{"raise", "fundraise", "investor", "venture", "series"}, "Fundraising readiness checklist: 1) 6+ months of clean financials, 2) Clear unit economics (LTV/CAC), 3) Demonstrated growth trajectory, 4) Defined use of funds. Pro tier generates investor-ready financial reports.", 0.65},
+		{[]string{"valuation", "worth", "company value"}, "Startup valuation methods: 1) Revenue multiple (3-10x ARR for SaaS), 2) Comparable transactions, 3) Discounted cash flow (DCF). Early stage often uses post-money SAFE notes. Upload financials for a data-driven estimate.", 0.6},
+
+		// Operational Finance
+		{[]string{"invoice", "receivable", "ar", "accounts receivable"}, "Accounts Receivable (AR) is money owed to you. Track aging: 0-30 days (current), 31-60 days (attention), 61-90 days (collections), 90+ days (risk). Aim for DSO (Days Sales Outstanding) under 45 days.", 0.7},
+		{[]string{"payable", "ap", "accounts payable"}, "Accounts Payable (AP) is money you owe. Manage by: 1) Negotiating payment terms (Net 30/60/90), 2) Taking early payment discounts (2/10 Net 30), 3) Prioritizing high-interest debts first.", 0.7},
+		{[]string{"payroll", "salary", "wages", "compensation"}, "Payroll typically represents 40-60% of startup expenses. Track: 1) Fully loaded cost (salary × 1.25-1.4 for benefits/taxes), 2) Runway impact per hire, 3) Equity vs cash compensation mix.", 0.7},
+
+		// Help & Support
+		{[]string{"help", "how to", "guide", "tutorial"}, "FinFlow Quick Guide: 1) Upload CSV → Auto-categorize transactions, 2) Dashboard → View cash flow & health score, 3) Forecast → See projections (Pro), 4) Copilot → Ask financial questions. For detailed help, visit docs.finflow.io", 0.8},
+		{[]string{"upgrade", "pro", "max", "plan", "pricing"}, "Plan comparison: Free (3 queries, basic analytics), Pro (unlimited, forecasting, anomaly alerts), Max (multi-model AI, priority support, custom reports). Upgrade at /settings/billing", 0.85},
+		{[]string{"human", "talk to", "support", "agent", "person"}, "I'll connect you with a support specialist. They can help with complex financial analysis, custom reports, and account-specific questions. Response time: within 6 hours for Pro, 24 hours for Free.", 0.3},
 	}
 
+	// Match against knowledge base
+	for _, entry := range kb {
+		for _, pattern := range entry.patterns {
+			if strings.Contains(msg, pattern) {
+				reply = entry.response
+				conf = entry.conf
+				goto matched
+			}
+		}
+	}
+
+matched:
 	needs := conf < 0.4 || strings.Contains(msg, "human") || strings.Contains(msg, "talk to")
-	r := ChatResponse{Reply: reply, Confidence: conf, Provider: "free", NeedsTicket: needs}
+	r := ChatResponse{Reply: reply, Text: reply, Confidence: conf, Provider: "free", NeedsTicket: needs}
 	if needs {
 		r.TicketReason = "User requested human help or free-tier could not resolve."
 	}

@@ -39,6 +39,7 @@ type Config struct {
 	AnthropicAPIKey    string
 	GeminiAPIKey       string
 	AIOpsOwnerEmail    string
+	Web3FormsKey       string // Web3Forms access key for support tickets
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -83,6 +84,7 @@ func Load() (*Config, error) {
 		AnthropicAPIKey: getEnv("ANTHROPIC_API_KEY", ""),
 		GeminiAPIKey:   getEnv("GEMINI_API_KEY", ""),
 		AIOpsOwnerEmail: getEnv("AIOPS_OWNER_EMAIL", ""),
+		Web3FormsKey:   getEnv("WEB3FORMS_KEY", ""),
 	}
 
 	if cfg.JWTSecret == "" {
