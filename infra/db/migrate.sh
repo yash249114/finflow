@@ -12,7 +12,7 @@
 set -euo pipefail
 
 # ── Configuration ──────────────────────────────────────────
-DATABASE_URL="${DATABASE_URL:-postgresql://postgres:password@localhost:5432/finflow}"
+DATABASE_URL="${DATABASE_URL:?DATABASE_URL is required. Set it via env or .env file. Example: DATABASE_URL=postgresql://user:pass@host:5432/finflow}"
 MIGRATIONS_DIR="$(cd "$(dirname "$0")/migrations" && pwd)"
 USE_DOCKER=false
 
@@ -64,9 +64,16 @@ FAILED=0
 
 for migration in "$MIGRATIONS_DIR"/*.sql; do
     filename="$(basename "$migration")"
+
+    # Sanitize: only allow safe characters in migration filenames (prevents SQL injection)
+    if ! [[ "$filename" =~ ^[a-zA-Z0-9_\.-]+$ ]]; then
+        echo -e "${RED}Unsafe migration filename: $filename${NC}" >&2
+        ((FAILED++))
+        continue
+    fi
     
-    # Check if already applied
-    already=$(run_sql "SELECT COUNT(*) FROM schema_migrations WHERE filename = '$filename';" 2>/dev/null | grep -oE '[0-9]+' | head -1)
+    # Check if already applied (use psql variable to prevent SQL injection)
+    already=$(run_sql "SELECT COUNT(*) FROM schema_migrations WHERE filename = '"$filename"';" 2>/dev/null | grep -oE '[0-9]+' | head -1)
     
     if [ "${already:-0}" -gt 0 ]; then
         echo -e "  $filename ... ${YELLOW}SKIPPED (already applied)${NC}"
@@ -77,8 +84,8 @@ for migration in "$MIGRATIONS_DIR"/*.sql; do
     echo -n "  Running $filename ... "
 
     if run_file "$migration" > /dev/null 2>&1; then
-        # Record as applied
-        run_sql "INSERT INTO schema_migrations (filename) VALUES ('$filename');" > /dev/null 2>&1
+        # Record as applied (filename validated above, safe for interpolation)
+        run_sql "INSERT INTO schema_migrations (filename) VALUES ('"$filename"');" > /dev/null 2>&1
         echo -e "${GREEN}✓${NC}"
         ((MIGRATION_COUNT++))
     else

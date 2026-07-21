@@ -1,5 +1,7 @@
-# ml-service/tests/test_classify.py
 """Tests for the classification endpoint."""
+
+import os
+os.environ.setdefault("ML_API_KEY", "test-key")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,6 +20,8 @@ def setup_categorizer():
 
 client = TestClient(app)
 
+auth_headers = {"Authorization": "Bearer test-key"}
+
 
 def test_classify_known_descriptions():
     """Test that well-known descriptions get correct categories."""
@@ -29,13 +33,12 @@ def test_classify_known_descriptions():
             "Facebook Ads Campaign",
             "Payroll February",
         ]
-    })
+    }, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert "categories" in data
     assert len(data["categories"]) == 5
 
-    # Verify expected categories (model should get these right with training data)
     categories = data["categories"]
     assert categories[0] == "Infrastructure"
     assert categories[1] == "Meals"
@@ -46,7 +49,7 @@ def test_classify_known_descriptions():
 
 def test_classify_empty_request():
     """Test that empty descriptions list returns 422."""
-    response = client.post("/classify", json={"descriptions": []})
+    response = client.post("/classify", json={"descriptions": []}, headers=auth_headers)
     assert response.status_code == 422
 
 
@@ -54,7 +57,7 @@ def test_classify_single_description():
     """Test classification of a single description."""
     response = client.post("/classify", json={
         "descriptions": ["Office Supplies - Staples"]
-    })
+    }, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert len(data["categories"]) == 1
@@ -65,11 +68,10 @@ def test_classify_unknown_description():
     """Test that an unknown description still returns a category."""
     response = client.post("/classify", json={
         "descriptions": ["xyzzy random gibberish 12345"]
-    })
+    }, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert len(data["categories"]) == 1
-    # Should return "Other" or some category — just shouldn't crash
     assert isinstance(data["categories"][0], str)
 
 

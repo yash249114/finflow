@@ -1,13 +1,16 @@
-// api/internal/middleware/rate_limit.go
 package middleware
 
 import (
+	"context"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
 
@@ -38,7 +41,6 @@ func (rl *rateLimiter) allow() bool {
 	now := time.Now()
 	cutoff := now.Add(-rl.interval)
 
-	// Prune expired slots
 	firstValid := 0
 	for i, t := range rl.slots {
 		if t.After(cutoff) {
@@ -119,17 +121,103 @@ func (rl *IPRateLimiter) Allow(ip string) bool {
 
 var globalRateLimiter = NewIPRateLimiter(100, 1*time.Minute, 30*time.Minute)
 
-func RateLimit() gin.HandlerFunc {
+// redis-backed rate limiting for distributed deployments.
+type RedisRateLimiter struct {
+	client   *redis.Client
+	max      int
+	interval time.Duration
+}
+
+func NewRedisRateLimiter(redisURL string, max int, interval time.Duration) (*RedisRateLimiter, error) {
+	if redisURL == "" {
+		return nil, nil
+	}
+	opts, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return nil, err
+	}
+	client := redis.NewClient(opts)
+	return &RedisRateLimiter{client: client, max: max, interval: interval}, nil
+}
+
+func (r *RedisRateLimiter) Allow(key string) bool {
+	if r == nil || r.client == nil {
+		return true
+	}
+	ctx := context.Background()
+	window := int64(r.interval.Seconds())
+	now := time.Now().Unix()
+	// Sliding window using sorted set — purge old entries, count current.
+	r.client.ZRemRangeByScore(ctx, key, "0", strconv.FormatInt(now-window, 10))
+	count, err := r.client.ZCard(ctx, key).Result()
+	if err != nil {
+		return true
+	}
+	if int(count) >= r.max {
+		return false
+	}
+	r.client.ZAdd(ctx, key, redis.Z{Score: float64(now), Member: now})
+	r.client.Expire(ctx, key, r.interval)
+	return true
+}
+
+func RateLimit(redisURL string) gin.HandlerFunc {
+	redisRL, err := NewRedisRateLimiter(redisURL, 100, 1*time.Minute)
+	if err != nil {
+		log.Warn().Err(err).Msg("Redis rate limiter disabled, falling back to in-memory")
+	}
+
 	return func(c *gin.Context) {
 		ip := parseIP(c.Request.RemoteAddr)
-		if !globalRateLimiter.Allow(ip) {
-			log.Warn().Str("ip", ip).Str("path", c.Request.URL.Path).Msg("rate limit exceeded")
+		key := "ratelimit:" + ip
+
+		if redisRL != nil {
+			if !redisRL.Allow(key) {
+				log.Warn().Str("ip", ip).Str("path", c.Request.URL.Path).Msg("rate limit exceeded (redis)")
+				c.Header("Retry-After", "60")
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+					"error": "rate limit exceeded. Try again later.",
+				})
+				return
+			}
+		} else if !globalRateLimiter.Allow(ip) {
+			log.Warn().Str("ip", ip).Str("path", c.Request.URL.Path).Msg("rate limit exceeded (memory)")
 			c.Header("Retry-After", "60")
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error": "rate limit exceeded. Try again later.",
 			})
 			return
 		}
+
+		// Endpoint-specific stricter limits
+		path := c.Request.URL.Path
+		method := c.Request.Method
+		if method == "POST" && (path == "/api/v1/auth/login" || strings.HasPrefix(path, "/api/v1/auth/register")) {
+			if !globalRateLimiter.Allow(ip + ":auth") {
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+					"error": "too many authentication attempts. Try again later.",
+				})
+				return
+			}
+		}
+		// Stricter limit for AI chat (cost exposure prevention)
+		if method == "POST" && path == "/api/ai/chat" {
+			chatKey := key + ":chat"
+			if redisRL != nil {
+				if !redisRL.Allow(chatKey) {
+					c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+						"error": "AI chat rate limit exceeded. Try again later.",
+					})
+					return
+				}
+			} else if !globalRateLimiter.Allow(ip + ":chat") {
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+					"error": "AI chat rate limit exceeded. Try again later.",
+				})
+				return
+			}
+		}
+
 		c.Next()
 	}
 }
@@ -140,4 +228,29 @@ func parseIP(remoteAddr string) string {
 		return remoteAddr
 	}
 	return host
+}
+
+func CSRF(allowedOrigin string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method == "GET" || c.Request.Method == "HEAD" || c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+		origin := c.GetHeader("Origin")
+		if origin == "" {
+			origin = c.GetHeader("Referer")
+		}
+		if origin == "" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "origin or referer header required for state-changing requests"})
+			return
+		}
+		allowedOrigins := strings.Split(allowedOrigin, ",")
+		for _, o := range allowedOrigins {
+			if strings.TrimSpace(o) == origin {
+				c.Next()
+				return
+			}
+		}
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "cross-site request forbidden"})
+	}
 }

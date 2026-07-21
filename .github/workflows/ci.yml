@@ -11,7 +11,7 @@ on:
 env:
   GO_VERSION: '1.24'
   NODE_VERSION: '20'
-  PYTHON_VERSION: '3.10'
+  PYTHON_VERSION: '3.11'
 
 jobs:
   # ─── API (Go) ──────────────────────────────────────────
@@ -79,6 +79,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Audit
+        run: npm audit --audit-level=high || true
+
       - name: Lint
         run: npm run lint
 
@@ -113,15 +116,17 @@ jobs:
       - name: Run E2E
         run: npx playwright test
         env:
-          BASE_URL: ${{ secrets.E2E_BASE_URL || 'https://finflow-ashy-six.vercel.app' }}
-          API_URL: ${{ secrets.E2E_API_URL || 'https://api.finflow.app' }}
-          ML_URL: ${{ secrets.E2E_ML_URL || 'https://ml.finflow.app' }}
+          # WARNING: These secrets must be set in GitHub Actions secrets.
+          # E2E_OTP_AUTO=1 requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
+          BASE_URL: ${{ secrets.E2E_BASE_URL }}
+          API_URL: ${{ secrets.E2E_API_URL }}
+          ML_URL: ${{ secrets.E2E_ML_URL }}
           E2E_OTP_AUTO: '1'
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
 
-  # ─── Security ─────────────────────────────────────────
+  # ─── Dependency & Container Vulnerability Scanning ────
   security:
     name: Security Scan
     runs-on: ubuntu-latest
@@ -132,6 +137,22 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           extra_args: --only-verified
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   # ─── Docker Build ─────────────────────────────────────
   docker:
@@ -145,3 +166,18 @@ jobs:
 
       - name: Build ${{ matrix.service }}
         run: docker build -t finflow-${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+
+  # ─── SAST (Static Analysis) ────────────────────────────
+  sast:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: go, javascript, python
+
+      - uses: github/codeql-action/analyze@v3

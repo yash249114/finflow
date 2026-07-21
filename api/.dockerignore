@@ -1,3 +1,13 @@
-node_modules
-.git
+# api/.dockerignore
+.git/
+.gitignore
 *.md
+node_modules/
+api/bin/
+cov-int/
+*.exe
+*.test
+*.out
+.vscode/
+.idea/
+coverage/

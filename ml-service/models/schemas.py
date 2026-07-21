@@ -7,7 +7,13 @@ from pydantic import BaseModel, Field
 # ─── Classification ────────────────────────────────────────
 
 class ClassifyRequest(BaseModel):
-    descriptions: list[str] = Field(..., min_length=1, description="Transaction descriptions to classify")
+    descriptions: list[str] = Field(
+        ...,
+        min_length=1,
+        max_length=10000,
+        description="Transaction descriptions to classify (max 10,000)",
+    )
+    _single_max_length: int = 500  # individual description max length, validated in route
 
 
 class ClassifyResponse(BaseModel):
@@ -37,6 +43,7 @@ class ForecastSummary(BaseModel):
     expected_net: float
     trend: str  # "declining" | "stable" | "improving"
     confidence: str  # "low" | "medium" | "high"
+    confidence_score: float = 0.0  # 0-1 numeric, consumed by AIOps
 
 
 class ForecastResponse(BaseModel):

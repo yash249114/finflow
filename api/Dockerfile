@@ -19,8 +19,13 @@ FROM alpine:3.19
 
 RUN apk add --no-cache ca-certificates curl tzdata
 
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
 COPY --from=builder /finflow-api .
+RUN chown appuser:appgroup /finflow-api
+
+USER appuser
 
 EXPOSE 8080
 

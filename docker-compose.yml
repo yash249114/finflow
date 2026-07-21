@@ -1,18 +1,39 @@
-# FinFlow — Docker Compose (Full Stack)
+# FinFlow — Docker Compose (Production Hardened)
 # Usage: docker compose up -d --build
 
 services:
+  # ── Reverse Proxy (TLS termination, request filtering) ──
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: finflow-nginx
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - frontend-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
   # ── PostgreSQL ─────────────────────────────────────
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: finflow-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-finflow}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,22 +41,35 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - db-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # ── Redis ──────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: finflow-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: >
+      sh -c "echo 'requirepass ${REDIS_PASSWORD}' > /tmp/redis.conf && redis-server /tmp/redis.conf --appendonly yes"
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - db-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   # ── Go API ─────────────────────────────────────────
   api:
@@ -48,12 +82,13 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-finflow}
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-random-64-char-string}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-finflow}
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_ACCESS_TTL_MINUTES: ${JWT_ACCESS_TTL_MINUTES:-15}
       JWT_REFRESH_TTL_DAYS: ${JWT_REFRESH_TTL_DAYS:-7}
       ML_SERVICE_URL: http://ml-service:8001
+      ML_API_KEY: ${ML_API_KEY:?ML_API_KEY is required}
       LEMONSQUEEZY_API_KEY: ${LEMONSQUEEZY_API_KEY:-}
       LEMONSQUEEZY_STORE_ID: ${LEMONSQUEEZY_STORE_ID:-}
       LEMONSQUEEZY_VARIANT_ID: ${LEMONSQUEEZY_VARIANT_ID:-}
@@ -62,21 +97,33 @@ services:
       APP_ENV: ${APP_ENV:-development}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       start_period: 10s
       retries: 3
+    networks:
+      - backend-net
+      - db-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   # ── ML Service ─────────────────────────────────────
   ml-service:
     build: ./ml-service
     container_name: finflow-ml
     restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
+    environment:
+      ML_API_KEY: ${ML_API_KEY:?ML_API_KEY is required}
     volumes:
       - ml_models:/app/models
     healthcheck:
@@ -85,23 +132,38 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # ── Frontend ───────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
         NEXT_PUBLIC_WEB3FORMS_KEY: ${NEXT_PUBLIC_WEB3FORMS_KEY:-}
+        NEXT_PUBLIC_ADMIN_EMAIL: ${ADMIN_EMAIL:-}
     container_name: finflow-frontend
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+    networks:
+      - frontend-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
 
 volumes:
   postgres_data:
@@ -110,3 +172,14 @@ volumes:
     name: finflow_redis_data
   ml_models:
     name: finflow_ml_models
+
+networks:
+  frontend-net:
+    driver: bridge
+    internal: false
+  backend-net:
+    driver: bridge
+    internal: true
+  db-net:
+    driver: bridge
+    internal: true

@@ -1,27 +1,33 @@
-// api/internal/middleware/auth.go
 package middleware
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/finflow/api/internal/db"
 	"github.com/finflow/api/internal/services/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
 
-// Auth creates middleware that validates JWT access tokens from cookies or Authorization header.
+type userCacheEntry struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Plan  string `json:"plan"`
+}
+
 func Auth(jwtService *jwt.Service, userRepo *db.UserRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var tokenString string
 
-		// Try cookie first
 		if cookie, err := c.Cookie("access_token"); err == nil && cookie != "" {
 			tokenString = cookie
 		}
 
-		// Fallback to Authorization header
 		if tokenString == "" {
 			auth := c.GetHeader("Authorization")
 			if strings.HasPrefix(auth, "Bearer ") {
@@ -51,18 +57,49 @@ func Auth(jwtService *jwt.Service, userRepo *db.UserRepo) gin.HandlerFunc {
 			return
 		}
 
-		// Look up user in database to get plan and other profile details
-		user, err := userRepo.GetByID(c.Request.Context(), userID)
-		if err != nil || user == nil {
-			log.Warn().Err(err).Str("user_id", userID).Msg("user profile not found in db")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user profile not found in database"})
-			return
+		// Try Redis cache first
+		rdb, hasRedis := c.Get("redis")
+		var found bool
+		if hasRedis {
+			if redisClient, ok := rdb.(*redis.Client); ok {
+				val, err := redisClient.Get(context.Background(), "user:"+userID).Bytes()
+				if err == nil {
+					var cached userCacheEntry
+					if json.Unmarshal(val, &cached) == nil {
+						c.Set("user_id", cached.ID)
+						c.Set("email", cached.Email)
+						c.Set("plan", cached.Plan)
+						found = true
+					}
+				}
+			}
 		}
 
-		// Attach user info to context for downstream handlers
-		c.Set("user_id", user.ID)
-		c.Set("email", user.Email)
-		c.Set("plan", user.Plan)
+		if !found {
+			user, err := userRepo.GetByID(c.Request.Context(), userID)
+			if err != nil || user == nil {
+				log.Warn().Err(err).Str("user_id", userID).Msg("user profile not found in db")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user profile not found"})
+				return
+			}
+
+			c.Set("user_id", user.ID)
+			c.Set("email", user.Email)
+			c.Set("plan", user.Plan)
+
+			// Cache in Redis for 5 minutes (best-effort)
+			if hasRedis {
+				if redisClient, ok := rdb.(*redis.Client); ok {
+					if data, err := json.Marshal(userCacheEntry{
+						ID:    user.ID,
+						Email: user.Email,
+						Plan:  user.Plan,
+					}); err == nil {
+						redisClient.Set(context.Background(), "user:"+userID, data, 5*time.Minute)
+					}
+				}
+			}
+		}
 
 		c.Next()
 	}

@@ -1,17 +1,27 @@
 # ml-service/Dockerfile
+# Multi-stage build to minimize attack surface in runtime image
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
 FROM python:3.11-slim
+
+RUN addgroup --system --gid 1001 mluser && \
+    adduser --system --uid 1001 mluser
 
 WORKDIR /app
 
-# Install dependencies first for Docker layer caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy only installed packages from builder
+COPY --from=builder /install /usr/local
 
-COPY . .
+# Copy application code
+COPY --chown=mluser:mluser . .
+RUN mkdir -p /app/models && chown mluser:mluser /app/models
 
-# Create models directory for joblib persistence
-RUN mkdir -p models
+USER mluser
 
 EXPOSE 8001
 

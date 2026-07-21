@@ -27,6 +27,15 @@ async def classify(req: ClassifyRequest) -> ClassifyResponse:
     if _categorizer is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
 
+    # Validate individual description length
+    max_desc_len = 500
+    for i, desc in enumerate(req.descriptions):
+        if len(desc) > max_desc_len:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Description at index {i} exceeds max length of {max_desc_len}",
+            )
+
     logger.info("Classifying %d descriptions", len(req.descriptions))
 
     try:

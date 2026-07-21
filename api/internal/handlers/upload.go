@@ -4,6 +4,7 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,6 +17,34 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
+
+const (
+	maxUploadSize        = 20 << 20  // 20 MB max CSV file
+	maxUploadRows        = 100000    // 100k rows max per upload
+	maxChunkSize         = 5 << 20   // 5 MB per chunk
+	contentTypeCSV       = "text/csv"
+	contentTypeOctet     = "application/octet-stream"
+)
+
+var allowedCSVExtensions = []string{".csv", ".tsv"}
+
+func validateCSVFile(header *multipart.FileHeader) error {
+	if header.Size > maxUploadSize {
+		return fmt.Errorf("file too large: %d bytes exceeds %d byte limit", header.Size, maxUploadSize)
+	}
+	ext := filepath.Ext(header.Filename)
+	valid := false
+	for _, e := range allowedCSVExtensions {
+		if ext == e {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return fmt.Errorf("invalid file extension: %q (only .csv accepted)", ext)
+	}
+	return nil
+}
 
 // UploadHandler handles CSV transaction uploads.
 type UploadHandler struct {
@@ -102,12 +131,24 @@ func (h *UploadHandler) UploadChunk(c *gin.Context) {
 		return
 	}
 
+	// Validate chunk size
+	if fileHeader.Size > maxChunkSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("chunk too large: %d bytes exceeds %d byte limit", fileHeader.Size, maxChunkSize)})
+		return
+	}
+
 	file, err := fileHeader.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open chunk segment"})
 		return
 	}
 	defer file.Close()
+
+	// Validate chunk index bounds
+	if chunkIdx < 0 || chunkIdx >= 1000 || totalChunks <= 0 || totalChunks > 1000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chunk metadata"})
+		return
+	}
 
 	// Ensure target directories exist
 	tempDir := filepath.Join(os.TempDir(), "finflow-uploads")
@@ -215,8 +256,23 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 	defer file.Close()
 
+	// File validation
+	if err := validateCSVFile(header); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Direct parsing for lightweight legacy support
 	result, err := csvparser.Parse(file)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid CSV: " + err.Error()})
+		return
+	}
+
+	if len(result.Rows) > maxUploadRows {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("CSV has %d rows, exceeds limit of %d", len(result.Rows), maxUploadRows)})
+		return
+	}
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid CSV: " + err.Error()})
 		return

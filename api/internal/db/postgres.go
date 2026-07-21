@@ -18,11 +18,12 @@ func NewPostgresPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, er
 		return nil, fmt.Errorf("parsing database URL: %w", err)
 	}
 
-	config.MaxConns = 20
-	config.MinConns = 2
+	config.MaxConns = 25
+	config.MinConns = 5
 	config.MaxConnLifetime = 30 * time.Minute
 	config.MaxConnIdleTime = 5 * time.Minute
-	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	config.HealthCheckPeriod = 30 * time.Second
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeCacheDescribe
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
