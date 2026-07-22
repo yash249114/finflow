@@ -51,7 +51,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="flex flex-col sm:flex-row items-start gap-4"
           >
-            <Link href="/auth/register">
+            <Link href="/register">
               <Button size="lg" className="group">
                 Start building
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

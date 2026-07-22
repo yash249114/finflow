@@ -254,7 +254,7 @@ export default function AboutPage() {
               className="btn-premium px-6 py-3 text-xs font-semibold text-white transition-[background-color,border-color,box-shadow,color,opacity] border border-indigo-500/30 rounded-xl"
             >
               <span>Get Started Free</span>
-              <ArrowRight className="h-4.5 w-4.5" />
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </motion.div>
@@ -271,8 +271,8 @@ export default function AboutPage() {
           </div>
 
           <div className="flex space-x-6">
-            <Link href="#" className="hover:text-gray-300 transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-gray-300 transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
           </div>
         </div>
       </footer>

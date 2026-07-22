@@ -23,7 +23,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 COPY --from=builder /finflow-api .
-RUN chown appuser:appgroup /finflow-api
+RUN chown appuser:appgroup /app/finflow-api
 
 USER appuser
 

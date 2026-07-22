@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, AlertTriangle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -14,14 +14,39 @@ interface NotificationToggle {
   enabled: boolean;
 }
 
+const STORAGE_KEY = "finflow_notification_prefs";
+
+const defaultNotifications: NotificationToggle[] = [
+  { id: "anomalies", label: "Anomaly Alerts", description: "Get notified when unusual spending patterns are detected", enabled: true },
+  { id: "forecast", label: "Forecast Updates", description: "Weekly forecast summary and prediction alerts", enabled: true },
+  { id: "billing", label: "Billing Reminders", description: "Subscription renewal and payment notifications", enabled: true },
+  { id: "product", label: "Product Updates", description: "New features, improvements, and changelog", enabled: false },
+  { id: "tips", label: "Financial Tips", description: "AI-generated tips for improving cash flow", enabled: false },
+];
+
+function loadPreferences(): NotificationToggle[] {
+  if (typeof window === "undefined") return defaultNotifications;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore */ }
+  return defaultNotifications;
+}
+
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<NotificationToggle[]>([
-    { id: "anomalies", label: "Anomaly Alerts", description: "Get notified when unusual spending patterns are detected", enabled: true },
-    { id: "forecast", label: "Forecast Updates", description: "Weekly forecast summary and prediction alerts", enabled: true },
-    { id: "billing", label: "Billing Reminders", description: "Subscription renewal and payment notifications", enabled: true },
-    { id: "product", label: "Product Updates", description: "New features, improvements, and changelog", enabled: false },
-    { id: "tips", label: "Financial Tips", description: "AI-generated tips for improving cash flow", enabled: false },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationToggle[]>(defaultNotifications);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setNotifications(loadPreferences());
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (loaded) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications)); } catch { /* ignore */ }
+    }
+  }, [notifications, loaded]);
 
   const toggleNotification = (id: string) => {
     setNotifications(prev =>

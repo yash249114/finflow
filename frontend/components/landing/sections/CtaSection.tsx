@@ -22,7 +22,7 @@ export function CtaSection() {
             infrastructure. Start free, scale infinitely.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/auth/register">
+            <Link href="/register">
               <Button size="lg" className="group w-full sm:w-auto">
                 Start building
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

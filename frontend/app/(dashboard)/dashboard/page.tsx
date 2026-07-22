@@ -72,6 +72,15 @@ interface ForecastPoint {
   upper: number;
 }
 
+interface ChartDataPoint {
+  date: string;
+  amount: number;
+  predicted?: number;
+  lower?: number;
+  upper?: number;
+  isForecast?: boolean;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -155,7 +164,7 @@ export default function DashboardPage() {
       dailyMap[d] = (dailyMap[d] || 0) + tx.amount;
     });
 
-    const chartData = Object.keys(dailyMap).map((date) => ({
+    const chartData: ChartDataPoint[] = Object.keys(dailyMap).map((date) => ({
       date,
       amount: parseFloat(dailyMap[date].toFixed(2)),
     }));
@@ -168,7 +177,6 @@ export default function DashboardPage() {
           chartData.push({
             date: f.date,
             amount: 0,
-            // @ts-expect-error - dynamic ComposedChart data types for forecast line
             predicted: parseFloat(f.predicted.toFixed(2)),
             lower: parseFloat(f.lower.toFixed(2)),
             upper: parseFloat(f.upper.toFixed(2)),

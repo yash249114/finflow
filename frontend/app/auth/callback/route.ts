@@ -37,11 +37,7 @@ export async function GET(request: Request) {
       // Restrict redirect to relative paths only — blocks open redirect
       const nextPath = next.startsWith("/") ? next : "/dashboard";
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || origin).replace(/\/+$/, '');
-      const allowedOrigins = [origin, appUrl];
-      if (process.env.NODE_ENV === "production") {
-        allowedOrigins.push("https://finflow.vercel.app");
-      }
-      const redirectTarget = `${allowedOrigins[0]}${nextPath}`;
+      const redirectTarget = `${appUrl}${nextPath}`;
       return NextResponse.redirect(redirectTarget);
     }
   }

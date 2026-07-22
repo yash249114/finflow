@@ -156,9 +156,10 @@ func TestForecast_Success(t *testing.T) {
 				{Date: "2026-02-01", Predicted: 5000, Lower: 4000, Upper: 6000},
 			},
 			Summary: models.ForecastSummary{
-				ExpectedNet: 5000,
-				Trend:       "up",
-				Confidence:  "high",
+				ExpectedNet:     5000,
+				Trend:           "up",
+				Confidence:      "high",
+				ConfidenceScore: 0.85,
 			},
 		})
 	}))

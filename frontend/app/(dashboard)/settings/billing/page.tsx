@@ -123,13 +123,32 @@ export default function BillingPage() {
       return;
     }
     setSubmittingMaxRequest(true);
-    // Simulate API request
-    setTimeout(() => {
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "e427140e-749e-4e4b-b0b3-3a780d6b9d62",
+          subject: "FinFlow MAX Billing Inquiry",
+          name: user?.full_name || "Unknown",
+          email: user?.email || "Unknown",
+          company: user?.full_name || "",
+          message: maxRequestMessage,
+        }),
+      });
+      const result = await response.json();
+      if (result.success || response.ok) {
+        toast.success("Your inquiry for FinFlow MAX has been sent! Our team will contact you shortly.");
+        setIsMaxModalOpen(false);
+        setMaxRequestMessage("");
+      } else {
+        toast.error(result.message || "Failed to submit MAX request.");
+      }
+    } catch {
+      toast.error("Network error while submitting MAX request.");
+    } finally {
       setSubmittingMaxRequest(false);
-      setIsMaxModalOpen(false);
-      setMaxRequestMessage("");
-      toast.success("Your inquiry for FinFlow MAX has been sent! Our team will contact you shortly.");
-    }, 1500);
+    }
   };
 
   const toggleFaq = (index: number) => {
@@ -186,7 +205,7 @@ export default function BillingPage() {
             return (
               <div
                 key={i}
-                className={`absolute w-3 w-3 ${color} rounded-sm animate-confetti`}
+                className={`absolute w-3 h-3 ${color} rounded-sm animate-confetti`}
                 style={{
                   left,
                   animationDelay: delay,
@@ -453,7 +472,7 @@ export default function BillingPage() {
                 {userPlan === "max" ? (
                   <button
                     disabled
-                    className="w-full rounded-xl bg-violet-950/40 border border-violet-850 text-violet-400 py-3 text-xs font-semibold cursor-not-allowed select-none"
+                    className="w-full rounded-xl bg-violet-950/40 border border-violet-800 text-violet-400 py-3 text-xs font-semibold cursor-not-allowed select-none"
                   >
                     Active Plan
                   </button>

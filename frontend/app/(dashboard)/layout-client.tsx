@@ -37,7 +37,7 @@ export function LayoutClient({
     e.preventDefault();
     setSubmittingWaitlist(true);
 
-    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "e427140e-749e-4e4b-b0b3-3a780d6b9d62"; // Fallback demo key
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "e427140e-749e-4e4b-b0b3-3a780d6b9d62"; // Fallback demo key
 
     try {
       const response = await fetch("https://api.web3forms.com/submit", {
@@ -178,7 +178,7 @@ export function LayoutClient({
               className="md:hidden text-text-muted hover:text-white focus:outline-none p-1.5 rounded-lg hover:bg-white/[0.04] transition-colors"
               aria-label="Open sidebar"
             >
-              <Menu className="h-4.5 w-4.5" />
+              <Menu className="h-4 w-4" />
             </button>
             {/* Page Title */}
             <h2 className="text-sm font-semibold tracking-tight text-text-secondary">
@@ -302,7 +302,7 @@ export function LayoutClient({
                 <button
                   type="submit"
                   disabled={submittingWaitlist}
-                  className="w-full bg-indigo-650 hover:bg-indigo-600 disabled:bg-zinc-800 disabled:text-gray-600 text-white rounded-xl py-3 text-xs font-bold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-gray-600 text-white rounded-xl py-3 text-xs font-bold transition-[background-color,border-color,box-shadow,color,opacity] shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {submittingWaitlist ? "Submitting Application..." : "Submit Strategic Request"}
                 </button>

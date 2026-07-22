@@ -43,27 +43,27 @@ export function Max() {
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-300"
           >
             <div className="flex items-center space-x-2">
-              <Check className="h-4 w-4 text-indigo-450 shrink-0" />
+              <Check className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>AI cash flow simulation</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Check className="h-4 w-4 text-indigo-450 shrink-0" />
+              <Check className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>Predictive runway analysis</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Check className="h-4 w-4 text-indigo-450 shrink-0" />
+              <Check className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>Automated anomaly detection</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Check className="h-4 w-4 text-indigo-450 shrink-0" />
+              <Check className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>AI business health scoring</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Check className="h-4 w-4 text-indigo-450 shrink-0" />
+              <Check className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>Future liquidity alerts</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Check className="h-4 w-4 text-indigo-450 shrink-0" />
+              <Check className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>AI decision recommendations</span>
             </div>
           </motion.div>

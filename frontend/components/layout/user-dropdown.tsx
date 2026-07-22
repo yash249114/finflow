@@ -181,7 +181,7 @@ export default function UserDropdown({ open, onClose }: UserDropdownProps) {
                     onClose();
                     window.dispatchEvent(new CustomEvent('open-max-waitlist'));
                   }}
-                  className="w-full bg-gradient-to-r from-indigo-650 to-violet-650 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-bold rounded-xl py-2 transition-[background-color,border-color,box-shadow,color,opacity] flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/15 cursor-pointer"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-bold rounded-xl py-2 transition-[background-color,border-color,box-shadow,color,opacity] flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/15 cursor-pointer"
                 >
                   <Crown className="w-3.5 h-3.5" />
                   <span>Unlock MAX Enterprise</span>

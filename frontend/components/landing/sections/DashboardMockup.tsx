@@ -88,7 +88,7 @@ export function DashboardMockup() {
                     { t: "Expenses", v: "$25,711.58", diff: "+4.2%", p: false },
                     { t: "Horizon Score", v: "Optimal", diff: "90 Days", p: true },
                   ].map((st, idx) => (
-                    <div key={idx} className="bg-gray-900/40 border border-gray-850/80 p-4 rounded-xl space-y-1.5 hover:border-indigo-500/10 transition-colors">
+                    <div key={idx} className="bg-gray-900/40 border border-gray-800/80 p-4 rounded-xl space-y-1.5 hover:border-indigo-500/10 transition-colors">
                       <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider font-mono">{st.t}</div>
                       <div className="text-sm font-bold text-white font-mono">{st.v}</div>
                       <div className={`text-[9px] font-bold ${st.p ? "text-emerald-400" : "text-red-400"}`}>
@@ -99,7 +99,7 @@ export function DashboardMockup() {
                 </div>
 
                 {/* Line chart widget */}
-                <div className="bg-gray-900/20 border border-gray-850/80 rounded-xl p-5 relative overflow-hidden">
+                <div className="bg-gray-900/20 border border-gray-800/80 rounded-xl p-5 relative overflow-hidden">
                   {/* Realtime Scanning Prediction Beam */}
                   <div
                     className="absolute top-0 bottom-0 w-[1.5px] bg-gradient-to-b from-transparent via-indigo-500/30 to-transparent pointer-events-none"
@@ -199,7 +199,7 @@ export function DashboardMockup() {
               {/* Floating Panel 3 (Top Right) */}
               <div className="absolute -right-8 top-28 bg-gradient-to-br from-indigo-950/40 to-violet-950/40 border border-indigo-500/30 p-4 rounded-xl shadow-2xl flex flex-col space-y-1.5 backdrop-blur-xl pointer-events-none select-none hidden lg:flex">
                 <div className="flex items-center space-x-2">
-                  <span className="h-3.5 w-3.5 text-indigo-450 animate-pulse">✦</span>
+                  <span className="h-3.5 w-3.5 text-indigo-400 animate-pulse">✦</span>
                   <span className="text-[9px] text-white font-black uppercase tracking-widest font-mono">MAX Score</span>
                 </div>
                 <div className="text-base font-black text-white font-mono">98.2<span className="text-[10px] text-gray-500">/100</span></div>

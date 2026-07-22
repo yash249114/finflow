@@ -101,29 +101,29 @@ export function Pricing() {
               </div>
               <ul className="space-y-3.5 text-xs text-slate-300">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Up to 250 transactions</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>CSV imports</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Basic dashboard & charts</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>AI categorization</span>
                 </li>
                 <li className="flex items-center gap-2 text-slate-600">
-                  <Check className="h-4 w-4 text-emerald-450 opacity-40 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 opacity-40 shrink-0" />
                   <span>Limited forecasting horizons</span>
                 </li>
               </ul>
             </div>
             <Link
-              href="/auth/register"
+              href="/register"
               className="mt-8 block w-full text-center rounded-xl btn-chrome text-xs font-semibold py-3 transition-[background-color,border-color,box-shadow,color,opacity] text-white border border-slate-800 font-mono uppercase tracking-wider"
             >
               Get Started Free
@@ -153,30 +153,30 @@ export function Pricing() {
               </div>
               <ul className="space-y-3.5 text-xs text-slate-300">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span className="font-semibold">Unlimited transactions</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Advanced prediction logic</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>30 / 60 / 90 day horizons</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Anomaly spending alerts</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Priority system support</span>
                 </li>
               </ul>
             </div>
 
             <Link
-              href="/auth/register"
+              href="/register"
               className="mt-8 block w-full text-center rounded-xl btn-premium text-xs font-semibold py-3 transition-[background-color,border-color,box-shadow,color,opacity] text-white border border-indigo-500/30 font-mono uppercase tracking-wider"
             >
               Upgrade to Pro
@@ -200,11 +200,11 @@ export function Pricing() {
               </div>
               <ul className="space-y-3.5 text-xs text-slate-300">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>AI runway simulations</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-450 shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Founder CFO intelligence layer</span>
                 </li>
                 <li className="flex items-center gap-2">

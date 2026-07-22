@@ -36,7 +36,7 @@ export default function CopilotPage() {
             </div>
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-wider">Semantic Runway Tracking</h4>
-              <p className="text-[11px] text-gray-450 mt-1 leading-relaxed">
+              <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
                 Queries such as &apos;how long is my runway?&apos; trigger auto-computations of current deposits over average historical burn velocity.
               </p>
             </div>

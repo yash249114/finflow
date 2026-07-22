@@ -174,7 +174,6 @@ func (h *ForecastHandler) GetForecastQuality(c *gin.Context) {
 
 	// Compute quality metrics by comparing overlapping dates
 	metrics := computeForecastQuality(dailyActuals, forecastPoints)
-	metrics.ComputedAt = time.Now().UTC()
 
 	c.JSON(http.StatusOK, metrics)
 }
@@ -193,6 +192,8 @@ func computeForecastQuality(actuals map[string]float64, forecastPoints []interfa
 	var absErrors, sqErrors, absPctErrors []float64
 	var directionCorrect, withinInterval int
 	total := 0
+	var prevActual, prevPredicted float64
+	hasPrev := false
 
 	for _, point := range forecastPoints {
 		fp, ok := point.(map[string]interface{})
@@ -219,15 +220,16 @@ func computeForecastQuality(actuals map[string]float64, forecastPoints []interfa
 		}
 
 		// Direction accuracy: did forecast predict increase/decrease correctly?
-		if total > 1 {
-			prevActual := actuals[date]
-			prevPredicted := predicted
-			if (predicted > prevPredicted && actual > prevActual) ||
-				(predicted < prevPredicted && actual < prevActual) ||
-				(predicted == prevPredicted && actual == prevActual) {
+		if hasPrev {
+			actualUp := actual > prevActual
+			predictedUp := predicted > prevPredicted
+			if actualUp == predictedUp || actual == prevActual && predicted == prevPredicted {
 				directionCorrect++
 			}
 		}
+		prevActual = actual
+		prevPredicted = predicted
+		hasPrev = true
 
 		// Confidence interval coverage
 		lower, hasLower := fp["lower"].(float64)
@@ -267,8 +269,12 @@ func computeForecastQuality(actuals map[string]float64, forecastPoints []interfa
 		}
 
 		// Direction accuracy
-		if total > 1 {
-			metrics.DirectionAccuracy = float64(directionCorrect) / float64(total-1) * 100
+		dirTotal := total
+		if dirTotal > 1 {
+			dirTotal-- // first point has no previous
+		}
+		if dirTotal > 0 {
+			metrics.DirectionAccuracy = float64(directionCorrect) / float64(dirTotal) * 100
 		}
 
 		// Confidence coverage

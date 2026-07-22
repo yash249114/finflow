@@ -121,9 +121,10 @@ type ForecastPoint struct {
 }
 
 type ForecastSummary struct {
-	ExpectedNet float64 `json:"expected_net"`
-	Trend       string  `json:"trend"`
-	Confidence  string  `json:"confidence"`
+	ExpectedNet     float64 `json:"expected_net"`
+	Trend           string  `json:"trend"`
+	Confidence      string  `json:"confidence"`
+	ConfidenceScore float64 `json:"confidence_score"`
 }
 
 type ForecastResponse struct {

@@ -42,6 +42,9 @@ export default function ChatInterface() {
   const { user } = useAuth();
   const plan = user?.plan || "free";
   
+  const nextId = useRef(0);
+  const getId = () => `msg_${nextId.current++}_${Date.now()}`;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -111,7 +114,7 @@ export default function ChatInterface() {
         setMessages((prev) => [
           ...prev,
           {
-            id: Math.random().toString(),
+            id: getId(),
             sender: "ai",
             text: data.text,
             timestamp: new Date(),
@@ -126,7 +129,7 @@ export default function ChatInterface() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Math.random().toString(),
+          id: getId(),
           sender: "ai",
           text: data.text,
           timestamp: new Date(),
@@ -141,7 +144,7 @@ export default function ChatInterface() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Math.random().toString(),
+          id: getId(),
           sender: "ai",
           text: "I am temporarily unable to connect to the FinFlow reasoning engine. Please check your network connection.",
           timestamp: new Date(),
@@ -159,13 +162,13 @@ export default function ChatInterface() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Math.random().toString(),
+          id: getId(),
           sender: "user",
           text,
           timestamp: new Date(),
         },
         {
-          id: Math.random().toString(),
+          id: getId(),
           sender: "ai",
           text: "You have reached your Free Plan limit of 3 Copilot messages. Upgrade to Pro for unlimited AI-native financial planning and forecasting.",
           timestamp: new Date(),
@@ -178,7 +181,7 @@ export default function ChatInterface() {
 
     // Add user message
     const newMsg: Message = {
-      id: Math.random().toString(),
+      id: getId(),
       sender: "user",
       text,
       timestamp: new Date(),
@@ -197,7 +200,7 @@ export default function ChatInterface() {
     setMessages((prev) => [
       ...prev,
       {
-        id: Math.random().toString(),
+        id: getId(),
         sender: "ai",
         text: "Human Escalation Approved. A Support Specialist will review this thread and message your profile email.",
         timestamp: new Date(),

@@ -37,6 +37,7 @@ interface ForecastSummary {
   expected_net: number;
   trend: string;
   confidence: string;
+  confidence_score: number;
 }
 
 interface ForecastResponse {
@@ -201,7 +202,7 @@ export default function ForecastPage() {
           </p>
 
           {/* Blur preview mockup */}
-          <div className="w-full h-40 bg-gray-950/40 rounded-xl my-8 border border-gray-850 relative overflow-hidden flex items-end justify-between px-10 pt-10 select-none opacity-40 blur-[2px]">
+          <div className="w-full h-40 bg-gray-950/40 rounded-xl my-8 border border-gray-800 relative overflow-hidden flex items-end justify-between px-10 pt-10 select-none opacity-40 blur-[2px]">
             <div className="w-10 bg-blue-500/25 rounded-t h-[40%]" />
             <div className="w-10 bg-blue-500/35 rounded-t h-[55%]" />
             <div className="w-10 bg-blue-500/30 rounded-t h-[45%]" />
@@ -212,7 +213,7 @@ export default function ForecastPage() {
           </div>
 
           {/* Features check grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl text-left border-y border-gray-850 py-6 mb-8 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl text-left border-y border-gray-800 py-6 mb-8 w-full">
             <div className="flex items-center space-x-2.5 text-sm text-gray-300">
               <span className="text-success font-bold">✓</span>
               <span>30, 60, and 90-day forecasts</span>
@@ -523,7 +524,7 @@ export default function ForecastPage() {
                   <th className="px-4 py-3">Upper Bound</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-850">
+              <tbody className="divide-y divide-gray-800">
                 {forecast.map((f) => {
                   const isPeak = peak && f.date === peak.date;
                   const isTrough = trough && f.date === trough.date;
@@ -575,7 +576,7 @@ export default function ForecastPage() {
 
             {summary && peak && trough ? (
               <div className="space-y-4 text-xs leading-relaxed text-gray-300">
-                <div className="bg-gray-950 p-4 rounded-xl border border-gray-850 space-y-2">
+                  <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
                   <div className="flex items-start space-x-2">
                     <span className="text-primary mt-0.5">•</span>
                     <p>

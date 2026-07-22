@@ -1,7 +1,7 @@
 """Tests for the forecast endpoint."""
 
 import os
-os.environ.setdefault("ML_API_KEY", "test-key")
+os.environ["ML_API_KEY"] = "test-key"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -57,6 +57,7 @@ def test_forecast_basic():
     assert "trend" in s
     assert "expected_net" in s
     assert "confidence" in s
+    assert "confidence_score" in s
 
 
 def test_forecast_insufficient_data():

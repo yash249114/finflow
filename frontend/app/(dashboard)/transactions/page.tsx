@@ -292,7 +292,7 @@ export default function TransactionsPage() {
               ? "border-gray-800 bg-gray-950/20 cursor-default"
               : isDragOver
               ? "border-blue-500 bg-blue-500/5 scale-[1.01] cursor-pointer"
-              : "border-gray-850 hover:border-gray-700 bg-gray-950/30 hover:bg-gray-950/50 cursor-pointer"
+              : "border-gray-800 hover:border-gray-700 bg-gray-950/30 hover:bg-gray-950/50 cursor-pointer"
           }`}
         >
           <input
@@ -366,7 +366,7 @@ export default function TransactionsPage() {
 
         {/* Upload Results report */}
         {uploadResult && (
-          <div className="mt-6 bg-gray-950 rounded-xl p-5 border border-gray-850 animate-fade-in space-y-4">
+          <div className="mt-6 bg-gray-950 rounded-xl p-5 border border-gray-800 animate-fade-in space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
                 <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center text-success">
@@ -557,7 +557,7 @@ export default function TransactionsPage() {
                   <th className="px-6 py-4">Date Added</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-850">
+              <tbody className="divide-y divide-gray-800">
                 {transactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-gray-800/30 transition-colors">
                     <td className="px-6 py-4 text-white font-medium whitespace-nowrap">
@@ -593,7 +593,7 @@ export default function TransactionsPage() {
 
         {/* Pagination Footer */}
         {transactions.length > 0 && (
-          <div className="bg-gray-950 border-t border-gray-850 px-6 py-4 flex items-center justify-between text-xs select-none">
+          <div className="bg-gray-950 border-t border-gray-800 px-6 py-4 flex items-center justify-between text-xs select-none">
             <span className="text-text-muted">
               Showing {(page - 1) * limit + 1}-{Math.min(page * limit, totalCount)} of {totalCount} transactions
             </span>
@@ -608,7 +608,7 @@ export default function TransactionsPage() {
                     setLimit(parseInt(e.target.value));
                     setPage(1);
                   }}
-                  className="bg-gray-800 border border-gray-750 text-white rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 h-7"
+                  className="bg-gray-800 border border-gray-700 text-white rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 h-7"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>

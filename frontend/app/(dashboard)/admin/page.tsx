@@ -222,7 +222,7 @@ export default function AdminOverview() {
           <div className="w-full bg-zinc-800 rounded-full h-1">
             <div className="bg-emerald-500 h-1 rounded-full w-[65%]" />
           </div>
-          <p className="text-[10px] text-gray-450 leading-relaxed">Active WebSocket tunnels maintaining real-time ledger classification states.</p>
+                    <p className="text-[10px] text-gray-400 leading-relaxed">Active WebSocket tunnels maintaining real-time ledger classification states.</p>
         </div>
 
         {/* Upload Stats */}
@@ -240,7 +240,7 @@ export default function AdminOverview() {
           <div className="w-full bg-zinc-800 rounded-full h-1">
             <div className="bg-indigo-500 h-1 rounded-full w-[40%]" />
           </div>
-          <p className="text-[10px] text-gray-455 leading-relaxed">Processing rate: 3,420 rows/sec. No parsing overflow or segments leaked.</p>
+          <p className="text-[10px] text-gray-400 leading-relaxed">Processing rate: 3,420 rows/sec. No parsing overflow or segments leaked.</p>
         </div>
 
         {/* API Throughput */}
@@ -258,7 +258,7 @@ export default function AdminOverview() {
           <div className="w-full bg-zinc-800 rounded-full h-1">
             <div className="bg-violet-500 h-1 rounded-full w-[85%]" />
           </div>
-          <p className="text-[10px] text-gray-455 leading-relaxed">REST and JSON RPC route gateways latency average: 18ms. SSD Cache hit rate 94%.</p>
+          <p className="text-[10px] text-gray-400 leading-relaxed">REST and JSON RPC route gateways latency average: 18ms. SSD Cache hit rate 94%.</p>
         </div>
       </motion.div>
 

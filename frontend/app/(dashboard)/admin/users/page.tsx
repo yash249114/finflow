@@ -60,7 +60,7 @@ export default function UserManagement() {
       } else {
         // Just mock it locally
         setUsers(prev => [...prev, {
-          id: Math.random().toString(),
+          id: `local_${Date.now()}`,
           email: req.email,
           full_name: req.name,
           plan: "max",
@@ -76,7 +76,7 @@ export default function UserManagement() {
       console.warn("DB update failed, updating local state only:", err);
       setUsers(prev => prev.map(u => u.email === req.email ? { ...u, plan: "max" } : u));
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
-      toast.success(`Successfully upgraded ${req.name} to MAX plan (local fallback)`);
+      toast.info(`Upgraded ${req.name} to MAX plan (local fallback)`);
     }
   };
 
@@ -156,7 +156,7 @@ export default function UserManagement() {
       console.warn("Database save failed, applying local mock save.", errMsg);
       // Fallback state update locally for presentation
       setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, plan: editPlan, role: editRole, status: editStatus } : u));
-      toast.success(`Successfully saved setting updates for ${editingUser.full_name} (local)`);
+      toast.info(`Successfully saved setting updates for ${editingUser.full_name} (local)`);
       setEditingUser(null);
     } finally {
       setSavingEdit(false);
@@ -178,7 +178,7 @@ export default function UserManagement() {
     } catch {
       // Apply locally
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
-      toast.success(`User status updated to ${newStatus} (local)`);
+      toast.info(`User status updated to ${newStatus} (local)`);
     }
   };
 
@@ -247,7 +247,7 @@ export default function UserManagement() {
                   </button>
                   <button
                     onClick={() => handleApproveMax(req)}
-                    className="flex items-center space-x-1 bg-violet-650 hover:bg-violet-750 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-[background-color,border-color,box-shadow,color,opacity] cursor-pointer shadow-md shadow-violet-500/10"
+                    className="flex items-center space-x-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-[background-color,border-color,box-shadow,color,opacity] cursor-pointer shadow-md shadow-violet-500/10"
                   >
                     <Check className="w-3 h-3" />
                     <span>Approve & Upgrade</span>

@@ -1,7 +1,7 @@
 """Tests for the classification endpoint."""
 
 import os
-os.environ.setdefault("ML_API_KEY", "test-key")
+os.environ["ML_API_KEY"] = "test-key"
 
 import pytest
 from fastapi.testclient import TestClient
