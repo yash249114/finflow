@@ -15,7 +15,7 @@ RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /finflow-api ./cmd/main.go
 
 # ── Stage 2: Run ──────────────────────────────────────────
-FROM alpine:3.19
+FROM alpine:3.24
 
 RUN apk add --no-cache ca-certificates curl tzdata postgresql-client
 
