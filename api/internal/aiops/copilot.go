@@ -42,11 +42,17 @@ type Copilot struct {
 	openAIKey    string
 	anthropicKey string
 	geminiKey    string
+	httpClient   *http.Client
 }
 
 // NewCopilot builds a tiered copilot router.
 func NewCopilot(openAIKey, anthropicKey, geminiKey string) *Copilot {
-	return &Copilot{openAIKey: openAIKey, anthropicKey: anthropicKey, geminiKey: geminiKey}
+	return &Copilot{
+		openAIKey:    openAIKey,
+		anthropicKey: anthropicKey,
+		geminiKey:    geminiKey,
+		httpClient:   &http.Client{Timeout: 30 * time.Second},
+	}
 }
 
 // Respond handles a chat turn, applying the tier routing and confidence scoring.
@@ -223,7 +229,7 @@ func (c *Copilot) callOpenAI(ctx context.Context, req ChatRequest, system string
 		"model":    "gpt-4o-mini",
 		"messages": messages,
 	})
-	return postJSON(ctx, "https://api.openai.com/v1/chat/completions", map[string]string{
+	return c.postJSON(ctx, "https://api.openai.com/v1/chat/completions", map[string]string{
 		"Authorization": "Bearer " + c.openAIKey,
 		"Content-Type":  "application/json",
 	}, body, func(b []byte) (string, error) {
@@ -256,7 +262,7 @@ func (c *Copilot) callClaude(ctx context.Context, req ChatRequest) (string, erro
 		"max_tokens": 512,
 		"messages":   messages,
 	})
-	return postJSON(ctx, "https://api.anthropic.com/v1/messages", map[string]string{
+	return c.postJSON(ctx, "https://api.anthropic.com/v1/messages", map[string]string{
 		"x-api-key":         c.anthropicKey,
 		"anthropic-version": "2023-06-01",
 		"Content-Type":      "application/json",
@@ -284,7 +290,7 @@ func (c *Copilot) callGemini(ctx context.Context, req ChatRequest) (string, erro
 		},
 	})
 	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-	return postJSON(ctx, url, map[string]string{
+	return c.postJSON(ctx, url, map[string]string{
 		"Content-Type":   "application/json",
 		"X-Goog-Api-Key": c.geminiKey,
 	}, body, func(b []byte) (string, error) {
@@ -310,7 +316,7 @@ func (c *Copilot) callGemini(ctx context.Context, req ChatRequest) (string, erro
 	})
 }
 
-func postJSON(ctx context.Context, url string, headers map[string]string, body []byte, extract func([]byte) (string, error)) (string, error) {
+func (c *Copilot) postJSON(ctx context.Context, url string, headers map[string]string, body []byte, extract func([]byte) (string, error)) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return "", err
@@ -318,8 +324,7 @@ func postJSON(ctx context.Context, url string, headers map[string]string, body [
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	client := &http.Client{Timeout: 20 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}

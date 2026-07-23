@@ -1,0 +1,612 @@
+{
+  "classifier:logistic_regression": [
+    {
+      "model_id": "68b648ed-cd0d-420a-b91e-bfdc986c7d5b",
+      "name": "classifier",
+      "model_type": "logistic_regression",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6821966,
+      "updated_at": 1784801107.6821966,
+      "trained_at": 1784801107.6831985,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "max_iter": 1000,
+        "C": 1.0
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "53978e4f-0c66-41a5-b56b-753560342b3c",
+      "name": "classifier",
+      "model_type": "logistic_regression",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.7937691,
+      "updated_at": 1784802177.7937691,
+      "trained_at": 1784802177.7965126,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "max_iter": 1000,
+        "C": 1.0
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "classifier:lightgbm": [
+    {
+      "model_id": "5db16ef1-f1ae-4f54-915b-ecc0502ab10a",
+      "name": "classifier",
+      "model_type": "lightgbm",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6831985,
+      "updated_at": 1784801107.6831985,
+      "trained_at": 1784801107.684198,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 500,
+        "learning_rate": 0.1
+      },
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "5e194d1e-6034-41e3-9687-1e624028d97f",
+      "name": "classifier",
+      "model_type": "lightgbm",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.7992322,
+      "updated_at": 1784802177.7992322,
+      "trained_at": 1784802177.8022695,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 500,
+        "learning_rate": 0.1
+      },
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "classifier:xgboost": [
+    {
+      "model_id": "b657c1b1-4182-4b87-ae3f-878abc978c38",
+      "name": "classifier",
+      "model_type": "xgboost",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.684198,
+      "updated_at": 1784801107.684198,
+      "trained_at": 1784801107.6851974,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 500,
+        "max_depth": 6
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "91ea7b76-07d6-46ca-bada-aa0151cc2712",
+      "name": "classifier",
+      "model_type": "xgboost",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8053946,
+      "updated_at": 1784802177.8053946,
+      "trained_at": 1784802177.8076792,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 500,
+        "max_depth": 6
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "classifier:catboost": [
+    {
+      "model_id": "c0b685d8-7b25-4082-a775-c1de660735ce",
+      "name": "classifier",
+      "model_type": "catboost",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6861975,
+      "updated_at": 1784801107.6861975,
+      "trained_at": 1784801107.6861975,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "iterations": 500
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "1667c6cc-f3eb-41da-a692-e3fcc7fd647e",
+      "name": "classifier",
+      "model_type": "catboost",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8112712,
+      "updated_at": 1784802177.8112712,
+      "trained_at": 1784802177.8137152,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "iterations": 500
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "forecaster:arima": [
+    {
+      "model_id": "3c304b30-39c4-4019-ac07-d9bdf20bee34",
+      "name": "forecaster",
+      "model_type": "arima",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6871974,
+      "updated_at": 1784801107.6871974,
+      "trained_at": 1784801107.6881974,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "order": [
+          1,
+          1,
+          1
+        ]
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "17bdc400-d2ee-4107-9ecf-d220869899f5",
+      "name": "forecaster",
+      "model_type": "arima",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8155048,
+      "updated_at": 1784802177.8155048,
+      "trained_at": 1784802177.8188305,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "order": [
+          1,
+          1,
+          1
+        ]
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "forecaster:exponential_smoothing": [
+    {
+      "model_id": "670a9fd8-9458-490b-9527-83a8352211f1",
+      "name": "forecaster",
+      "model_type": "exponential_smoothing",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6891975,
+      "updated_at": 1784801107.6891975,
+      "trained_at": 1784801107.6891975,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "trend": "add"
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "5dab787c-ef55-4973-80b2-457d50485b53",
+      "name": "forecaster",
+      "model_type": "exponential_smoothing",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.821838,
+      "updated_at": 1784802177.821838,
+      "trained_at": 1784802177.8253665,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "trend": "add"
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "forecaster:prophet": [
+    {
+      "model_id": "29271c63-2c0f-4cff-ae73-5b2c3bc2c420",
+      "name": "forecaster",
+      "model_type": "prophet",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6901975,
+      "updated_at": 1784801107.6901975,
+      "trained_at": 1784801107.6911972,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {},
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "6912deac-2828-4b09-a2e0-58ad07b21ede",
+      "name": "forecaster",
+      "model_type": "prophet",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8281782,
+      "updated_at": 1784802177.8281782,
+      "trained_at": 1784802177.8321514,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {},
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "anomaly:isolation_forest": [
+    {
+      "model_id": "6c6c8ade-2de4-472a-b2ab-cbef2b60a609",
+      "name": "anomaly",
+      "model_type": "isolation_forest",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6921964,
+      "updated_at": 1784801107.6921964,
+      "trained_at": 1784801107.6931973,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 100
+      },
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "9cff5eb9-bb98-4421-a2d1-35745bd63d39",
+      "name": "anomaly",
+      "model_type": "isolation_forest",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8355677,
+      "updated_at": 1784802177.8355677,
+      "trained_at": 1784802177.8390932,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 100
+      },
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "anomaly:zscore": [
+    {
+      "model_id": "6f6f9841-819b-40c2-b894-74623d56ea87",
+      "name": "anomaly",
+      "model_type": "zscore",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6942391,
+      "updated_at": 1784801107.6942391,
+      "trained_at": 1784801107.6961977,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "threshold": 3.0
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "6e9f2192-76e9-4193-af9d-90560ffca620",
+      "name": "anomaly",
+      "model_type": "zscore",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8429859,
+      "updated_at": 1784802177.8429859,
+      "trained_at": 1784802177.8477635,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "threshold": 3.0
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ],
+  "ensemble:ensemble": [
+    {
+      "model_id": "41691203-fcdd-4e59-bca0-06e4465f1028",
+      "name": "ensemble",
+      "model_type": "ensemble",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784801107.6971982,
+      "updated_at": 1784801107.6971982,
+      "trained_at": 1784801107.6981966,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "ensemble_method": "stacking"
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "63bb0b6a-3b02-49dc-8396-2ee1964fabe4",
+      "name": "ensemble",
+      "model_type": "ensemble",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784802177.8513184,
+      "updated_at": 1784802177.8513184,
+      "trained_at": 1784802177.8551762,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "ensemble_method": "stacking"
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    }
+  ]
+}

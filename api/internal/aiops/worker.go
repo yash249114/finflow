@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -21,6 +22,7 @@ type Worker struct {
 	alerter    *Alerter
 	windowSize int
 	events     []TelemetryEvent
+	mu         sync.RWMutex
 	lastScore  HealthScore
 }
 
@@ -124,7 +126,10 @@ func (w *Worker) analyze(ctx context.Context) {
 		return
 	}
 	win := NewWindow(w.events)
-	w.lastScore = win.ComputeHealth()
+	score := win.ComputeHealth()
+	w.mu.Lock()
+	w.lastScore = score
+	w.mu.Unlock()
 
 	incidents := win.DetectIncidents()
 	for _, inc := range incidents {
@@ -134,4 +139,8 @@ func (w *Worker) analyze(ctx context.Context) {
 }
 
 // Health returns the most recent computed health score.
-func (w *Worker) Health() HealthScore { return w.lastScore }
+func (w *Worker) Health() HealthScore {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.lastScore
+}

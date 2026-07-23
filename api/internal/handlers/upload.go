@@ -190,6 +190,21 @@ func (h *UploadHandler) UploadChunk(c *gin.Context) {
 	}
 
 	if allUploaded {
+		// Atomic sentinel to prevent concurrent merges for the same uploadID.
+		sentinelPath := filepath.Join(tempDir, fmt.Sprintf("%s.merging", uploadID))
+		sentinelFile, err := os.OpenFile(sentinelPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err != nil {
+			// Another goroutine already started merging — just trigger ingest.
+			mergedPath := filepath.Join(tempDir, fmt.Sprintf("%s.csv", uploadID))
+			if _, statErr := os.Stat(mergedPath); statErr == nil {
+				h.ingestMgr.StartIngest(userID, uploadID, mergedPath)
+			}
+			c.JSON(http.StatusOK, gin.H{"ok": true})
+			return
+		}
+		sentinelFile.Close()
+		defer os.Remove(sentinelPath)
+
 		// Merge chunks
 		finalPath := filepath.Join(tempDir, fmt.Sprintf("%s.csv", uploadID))
 		mergedFile, err := os.Create(finalPath)

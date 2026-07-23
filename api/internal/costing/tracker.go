@@ -28,13 +28,14 @@ type CostRecord struct {
 
 // CostTracker persists and queries cost events.
 type CostTracker struct {
-	pool *pgxpool.Pool
-	rdb  *redis.Client
+	pool      *pgxpool.Pool
+	rdb       *redis.Client
+	semaphore chan struct{}
 }
 
 // NewCostTracker creates a cost tracker.
 func NewCostTracker(pool *pgxpool.Pool, rdb *redis.Client) *CostTracker {
-	return &CostTracker{pool: pool, rdb: rdb}
+	return &CostTracker{pool: pool, rdb: rdb, semaphore: make(chan struct{}, 25)}
 }
 
 // Record logs a cost event. Best-effort.
@@ -46,7 +47,13 @@ func (t *CostTracker) Record(ctx context.Context, r CostRecord) {
 		r.CreatedAt = time.Now().UTC()
 	}
 
+	select {
+	case t.semaphore <- struct{}{}:
+	default:
+		return // drop rather than spawn unbounded goroutines
+	}
 	go func() {
+		defer func() { <-t.semaphore }()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 

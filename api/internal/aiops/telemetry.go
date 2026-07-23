@@ -26,14 +26,20 @@ type TelemetryEvent struct {
 
 // Publisher emits telemetry onto a Redis Stream for the AIOps worker to consume.
 type Publisher struct {
-	rdb     *redis.Client
-	stream  string
-	service string
+	rdb       *redis.Client
+	stream    string
+	service   string
+	semaphore chan struct{}
 }
 
 // NewPublisher creates a telemetry publisher for the given service.
 func NewPublisher(rdb *redis.Client, stream, service string) *Publisher {
-	return &Publisher{rdb: rdb, stream: stream, service: service}
+	return &Publisher{
+		rdb:       rdb,
+		stream:    stream,
+		service:   service,
+		semaphore: make(chan struct{}, 50),
+	}
 }
 
 // Emit records a telemetry event onto the stream. Failures are non-fatal (best-effort).
@@ -59,7 +65,14 @@ func (p *Publisher) Emit(ctx context.Context, e TelemetryEvent) {
 	if p.rdb == nil {
 		return
 	}
+	// Acquire semaphore slot to bound concurrent goroutines.
+	select {
+	case p.semaphore <- struct{}{}:
+	default:
+		return // drop telemetry rather than spawn unbounded goroutines
+	}
 	go func() {
+		defer func() { <-p.semaphore }()
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		p.rdb.XAdd(ctx, &redis.XAddArgs{

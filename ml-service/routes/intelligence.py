@@ -2,6 +2,9 @@
 """Routes for all financial intelligence features."""
 
 import logging
+import time
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 
 from core.config import Tier, get_active_tier, get_tier_config
@@ -9,6 +12,7 @@ from core.explainability import ExplainabilityEngine
 from core.history import PredictionHistory
 from core.recommendations import RecommendationEngine
 from core.risk import RiskScoringEngine
+from core.analytics import AnalyticsEngine, UsageRecord
 from models.schemas import (
     BusinessHealthRequest, BusinessHealthResponse,
     CashFlowRequest, CashFlowResponse,
@@ -39,6 +43,7 @@ _explainability = ExplainabilityEngine()
 _risk_engine = RiskScoringEngine()
 _recommendations_engine = RecommendationEngine()
 _history = PredictionHistory()
+_analytics: AnalyticsEngine | None = None
 
 
 @router.post("/cash-flow", response_model=CashFlowResponse)

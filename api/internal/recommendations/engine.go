@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/finflow/api/internal/analytics"
@@ -334,10 +335,14 @@ func (e *Engine) Apply(ctx context.Context, rec AutomatedRecommendation) error {
 		return fmt.Errorf("no config key specified")
 	}
 
-	// Parse category and key from configKey
-	// e.g., "free.transactions.max" -> category="limits", key="free.transactions.max"
+	// Parse category from config key prefix for more accurate routing.
 	category := "limits"
-	if rec.ConfigValue != nil {
+	switch {
+	case strings.HasPrefix(rec.ConfigKey, "features."):
+		category = "features"
+	case strings.HasPrefix(rec.ConfigKey, "ai_chat.model.") || strings.HasPrefix(rec.ConfigKey, "routing."):
+		category = "routing"
+	case rec.ConfigValue != nil:
 		switch rec.Type {
 		case "model_switch", "routing_change":
 			category = "routing"

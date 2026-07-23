@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 // RevenueMetrics holds revenue and subscription analytics.
@@ -43,13 +44,17 @@ func (s *RevenueService) GetMetrics(ctx context.Context) (*RevenueMetrics, error
 	}
 
 	// User counts by plan
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE plan = 'pro' OR plan = 'max'`,
-	).Scan(&m.PayingUsers)
+	).Scan(&m.PayingUsers); err != nil {
+		log.Warn().Err(err).Msg("revenue: failed to count paying users")
+	}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE plan = 'free'`,
-	).Scan(&m.FreeUsers)
+	).Scan(&m.FreeUsers); err != nil {
+		log.Warn().Err(err).Msg("revenue: failed to count free users")
+	}
 
 	// MRR from paying users
 	m.MRR = float64(m.PayingUsers) * proPlanPrice
@@ -71,13 +76,17 @@ func (s *RevenueService) GetMetrics(ctx context.Context) (*RevenueMetrics, error
 
 	// Upgrade/downgrade events this month
 	monthStart := time.Now().UTC().Format("2006-01-01")
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM upgrade_events WHERE event_type = 'checkout_completed' AND created_at >= $1`, monthStart,
-	).Scan(&m.UpgradeCount)
+	).Scan(&m.UpgradeCount); err != nil {
+		log.Warn().Err(err).Msg("revenue: failed to count upgrade events")
+	}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM upgrade_events WHERE event_type = 'downgrade' AND created_at >= $1`, monthStart,
-	).Scan(&m.DowngradeCount)
+	).Scan(&m.DowngradeCount); err != nil {
+		log.Warn().Err(err).Msg("revenue: failed to count downgrade events")
+	}
 
 	// Revenue by plan
 	m.RevenueByPlan["free"] = 0

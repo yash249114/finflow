@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/finflow/api/internal/db"
 	"github.com/gin-gonic/gin"
@@ -102,7 +103,7 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 	req.Header.Set("Accept", "application/vnd.api+json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error().Err(err).Str("user_id", userID).Msg("failed to perform checkout request to Lemon Squeezy")
@@ -167,7 +168,7 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 	req.Header.Set("Authorization", "Bearer "+h.apiKey)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error().Err(err).Str("user_id", userID).Msg("failed to perform customer request to Lemon Squeezy")

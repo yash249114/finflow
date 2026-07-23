@@ -4,6 +4,7 @@
 import logging
 from fastapi import APIRouter, HTTPException
 
+from core.analytics import AnalyticsEngine, UsageRecord
 from core.config import Tier, get_active_tier, get_tier_config
 from core.explainability import ExplainabilityEngine
 from core.history import PredictionHistory, PredictionRecord
@@ -21,6 +22,7 @@ _explainability: ExplainabilityEngine | None = None
 _risk_engine: RiskScoringEngine | None = None
 _recommendations_engine: RecommendationEngine | None = None
 _history: PredictionHistory | None = None
+_analytics: AnalyticsEngine | None = None
 
 
 def init_services(
@@ -29,13 +31,15 @@ def init_services(
     risk_engine: RiskScoringEngine,
     recommendations_engine: RecommendationEngine,
     history: PredictionHistory,
+    analytics: AnalyticsEngine | None = None,
 ) -> None:
-    global _categorizer, _explainability, _risk_engine, _recommendations_engine, _history
+    global _categorizer, _explainability, _risk_engine, _recommendations_engine, _history, _analytics
     _categorizer = categorizer
     _explainability = explainability
     _risk_engine = risk_engine
     _recommendations_engine = recommendations_engine
     _history = history
+    _analytics = analytics
 
 
 @router.post("/classify", response_model=ClassifyResponse)

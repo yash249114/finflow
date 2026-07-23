@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Config holds all application configuration loaded from environment variables.
@@ -91,6 +93,15 @@ func Load() (*Config, error) {
 
 	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET environment variable is required")
+	}
+
+	if cfg.AppEnv == "production" {
+		if cfg.DatabaseURL == "" {
+			return nil, fmt.Errorf("DATABASE_URL is required in production")
+		}
+		if cfg.LemonSqueezyAPIKey == "" {
+			log.Warn().Msg("LEMONSQUEEZY_API_KEY not set — billing features disabled")
+		}
 	}
 
 	return cfg, nil

@@ -194,6 +194,7 @@ func RateLimit(redisURL string) gin.HandlerFunc {
 		method := c.Request.Method
 		if method == "POST" && (path == "/api/v1/auth/login" || strings.HasPrefix(path, "/api/v1/auth/register")) {
 			if !globalRateLimiter.Allow(ip + ":auth") {
+				c.Header("Retry-After", "60")
 				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 					"error": "too many authentication attempts. Try again later.",
 				})
@@ -205,12 +206,14 @@ func RateLimit(redisURL string) gin.HandlerFunc {
 			chatKey := key + ":chat"
 			if redisRL != nil {
 				if !redisRL.Allow(chatKey) {
+					c.Header("Retry-After", "60")
 					c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 						"error": "AI chat rate limit exceeded. Try again later.",
 					})
 					return
 				}
 			} else if !globalRateLimiter.Allow(ip + ":chat") {
+				c.Header("Retry-After", "60")
 				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 					"error": "AI chat rate limit exceeded. Try again later.",
 				})

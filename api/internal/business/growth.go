@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 // GrowthMetrics holds growth analytics for the platform.
@@ -43,33 +44,47 @@ func (s *GrowthService) GetMetrics(ctx context.Context) (*GrowthMetrics, error) 
 	twoMonthsAgo := now.AddDate(0, -2, 0).Format("2006-01-02")
 
 	// Total users
-	_ = s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&m.TotalUsers)
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&m.TotalUsers); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count total users")
+	}
 
 	// Active users by period
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(DISTINCT user_id) FROM user_activity WHERE activity_date = $1`, today,
-	).Scan(&m.ActiveUsersDay)
+	).Scan(&m.ActiveUsersDay); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count daily active users")
+	}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(DISTINCT user_id) FROM user_activity WHERE activity_date >= $1`, weekAgo,
-	).Scan(&m.ActiveUsersWeek)
+	).Scan(&m.ActiveUsersWeek); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count weekly active users")
+	}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(DISTINCT user_id) FROM user_activity WHERE activity_date >= $1`, monthAgo,
-	).Scan(&m.ActiveUsersMonth)
+	).Scan(&m.ActiveUsersMonth); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count monthly active users")
+	}
 
 	// New users
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE created_at::date = $1`, today,
-	).Scan(&m.NewUsersToday)
+	).Scan(&m.NewUsersToday); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count new users today")
+	}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE created_at >= $1`, weekAgo,
-	).Scan(&m.NewUsersWeek)
+	).Scan(&m.NewUsersWeek); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count new users this week")
+	}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE created_at >= $1`, monthAgo,
-	).Scan(&m.NewUsersMonth)
+	).Scan(&m.NewUsersMonth); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count new users this month")
+	}
 
 	// Stickiness ratio (DAU/MAU)
 	if m.ActiveUsersMonth > 0 {
@@ -78,12 +93,16 @@ func (s *GrowthService) GetMetrics(ctx context.Context) (*GrowthMetrics, error) 
 
 	// Growth rates (compare current period to previous)
 	var prevWeekNew, prevMonthNew int
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE created_at >= $1 AND created_at < $2`, twoWeeksAgo, weekAgo,
-	).Scan(&prevWeekNew)
-	_ = s.pool.QueryRow(ctx,
+	).Scan(&prevWeekNew); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count previous week new users")
+	}
+	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM users WHERE created_at >= $1 AND created_at < $2`, twoMonthsAgo, monthAgo,
-	).Scan(&prevMonthNew)
+	).Scan(&prevMonthNew); err != nil {
+		log.Warn().Err(err).Msg("growth: failed to count previous month new users")
+	}
 
 	if prevWeekNew > 0 {
 		m.GrowthRateWeekly = float64(m.NewUsersWeek-prevWeekNew) / float64(prevWeekNew) * 100

@@ -169,9 +169,11 @@ type ExperimentResults struct {
 func (s *Service) GetResults(ctx context.Context, experimentID string) (*ExperimentResults, error) {
 	exp := &ExperimentResults{ExperimentID: experimentID}
 
-	_ = s.pool.QueryRow(ctx,
+	if err := s.pool.QueryRow(ctx,
 		`SELECT status FROM experiments WHERE id = $1`, experimentID,
-	).Scan(&exp.Status)
+	).Scan(&exp.Status); err != nil {
+		return nil, fmt.Errorf("experiment not found: %w", err)
+	}
 
 	rows, err := s.pool.Query(ctx,
 		`SELECT
