@@ -18,7 +18,7 @@ echo ""
 if [ ! -f .env ]; then
     echo -e "${YELLOW}Creating .env from .env.example...${NC}"
     cp .env.example .env
-    echo -e "${GREEN}✓ .env created. Edit it to add your Lemon Squeezy credentials.${NC}"
+    echo -e "${GREEN}✓ .env created. Edit it to add your Razorpay credentials.${NC}"
 else
     echo -e "${GREEN}✓ .env already exists${NC}"
 fi

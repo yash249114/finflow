@@ -51,7 +51,7 @@ You'll need these services configured:
 | Service | Free Tier | Purpose |
 |---------|-----------|---------|
 | [Supabase](https://supabase.com) | ✅ | Authentication |
-| [Lemon Squeezy](https://lemonsqueezy.com) | ✅ | Billing (optional) |
+| [Razorpay](https://razorpay.com) | ✅ | Payment processing |
 | [OpenAI](https://platform.openai.com) | Credits | AI Copilot (optional) |
 
 Minimum viable `.env`:

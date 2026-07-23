@@ -441,36 +441,77 @@ Get AI-powered financial recommendations.
 
 ## Billing
 
-### POST `/api/v1/billing/create-checkout`
+### GET `/api/v1/billing/plans`
 
-Create a Lemon Squeezy checkout session for plan upgrade.
+List available pricing plans.
+
+**Response (200):**
+```json
+{
+  "plans": [
+    {
+      "id": "emerald_monthly",
+      "name": "Emerald",
+      "slug": "emerald",
+      "tier": "pro",
+      "price": 999.00,
+      "currency": "INR",
+      "interval": "month",
+      "features": ["Unlimited transactions", "AI-powered insights", "Priority support", "Advanced analytics"]
+    }
+  ]
+}
+```
+
+---
+
+### POST `/api/v1/billing/checkout`
+
+Create a Razorpay order for plan purchase.
 
 **Request:**
 ```json
 {
-  "email": "user@example.com"
+  "plan": "emerald",
+  "billing_cycle": "monthly"
 }
 ```
 
 **Response (200):**
 ```json
 {
-  "checkout_url": "https://app.lemonsqueezy.com/checkout/..."
+  "order_id": "order_xxxxx",
+  "amount": 99900,
+  "currency": "INR",
+  "razorpay_key_id": "rzp_xxxxx",
+  "receipt": "finflow_user-id_1234567890",
+  "notes": {
+    "user_id": "user-id",
+    "plan": "emerald"
+  }
 }
 ```
-
-**Redirect flow:** After successful checkout, user is redirected to `/settings/billing?success=true`.
 
 ---
 
-### POST `/api/v1/billing/portal`
+### GET `/api/v1/billing/subscription`
 
-Open the Lemon Squeezy customer portal for subscription management.
+Get the current subscription state for the authenticated user.
 
 **Response (200):**
 ```json
 {
-  "portal_url": "https://app.lemonsqueezy.com/portal/..."
+  "subscription": {
+    "user_id": "uuid",
+    "status": "active",
+    "plan": "pro",
+    "plan_name": "Emerald",
+    "variant_slug": "emerald",
+    "billing_cycle": "monthly",
+    "subscription_id": "sub_xxxxx",
+    "customer_id": "cust_xxxxx",
+    "current_period_ends_at": "2026-08-23T00:00:00Z"
+  }
 }
 ```
 
@@ -478,17 +519,21 @@ Open the Lemon Squeezy customer portal for subscription management.
 
 ### POST `/api/v1/billing/webhook`
 
-Lemon Squeezy webhook endpoint. Processes subscription events.
+Razorpay webhook endpoint. Processes payment and subscription events.
 
 **Headers required:**
-- `X-Signature` — HMAC-SHA256 signature for verification
+- `X-Razorpay-Signature` — HMAC-SHA256 signature for verification
 
 **Supported events:**
-- `subscription_created` — Set user plan to `pro`
-- `subscription_updated` — Update plan if changed
-- `subscription_deleted` — Revert to `free`
-- `subscription_payment_success` — Log payment
-- `subscription_payment_failed` — Log failure
+- `payment.authorized` / `payment.captured` — Activate or upgrade plan
+- `payment.failed` — Mark subscription as past_due
+- `refund.created` / `refund.processed` — Revert to free plan
+- `subscription.activated` — Activate subscription plan
+- `subscription.charged` — Renew billing period
+- `subscription.completed` — Expire subscription
+- `subscription.cancelled` — Cancel immediately
+- `subscription.paused` — Mark as past_due
+- `subscription.resumed` — Reactivate plan
 
 **Idempotency:** Events are deduplicated via the `webhook_events` table.
 

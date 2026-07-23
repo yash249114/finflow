@@ -231,12 +231,15 @@ ALTER TABLE transactions ADD CONSTRAINT fk_user
 
 ### HMAC Signature Verification
 
-Lemon Squeezy webhooks are verified using HMAC-SHA256:
+Razorpay webhooks are verified using HMAC-SHA256:
 
 ```go
-func (h *BillingHandler) Webhook(c *gin.Context) {
-    signature := c.GetHeader("X-Signature")
-    body, _ := io.ReadAll(c.Request.Body)
+func (h *BillingHandler) verifyWebhookSignature(body []byte, signature string) bool {
+	mac := hmac.New(sha256.New, []byte(h.razorpayWebhook))
+	mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(expected), []byte(signature))
+}
     
     mac := hmac.New(sha256.New, []byte(webhookSecret))
     mac.Write(body)

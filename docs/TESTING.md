@@ -161,31 +161,26 @@ curl -X POST http://localhost:8001/forecast \
 
 ---
 
-## 8. Lemon Squeezy Webhook Testing
+## 8. Razorpay Webhook Testing
 
 ### Option A: Local Tunneling (Recommended)
 1. Start an `ngrok` tunnel for the API (runs on port `8080`):
    ```bash
    ngrok http 8080
    ```
-2. Configure the webhook in the Lemon Squeezy Developer Dashboard:
+2. Configure the webhook in the Razorpay Dashboard:
    - URL: `https://<your-ngrok-subdomain>.ngrok-free.app/api/v1/billing/webhook`
-   - Signing Secret: Matches `LEMONSQUEEZY_WEBHOOK_SECRET` in your `.env`
-   - Select events: `subscription_created`, `subscription_resumed`, `subscription_cancelled`, `subscription_expired`
-3. Trigger test webhook events directly from the Lemon Squeezy dashboard.
+   - Secret: Matches `RAZORPAY_WEBHOOK_SECRET` in your `.env`
+3. Trigger test webhook events directly from the Razorpay dashboard.
 
 ### Option B: Direct Local Testing via Curl (Manual HMAC Verification)
-You can simulate a webhook request locally using `curl` by manually computing the `X-Signature` header.
-With a local signing secret of `test_secret` and a payload of:
-`{"meta":{"event_name":"subscription_created","webhook_id":"evt_123","custom_data":{"user_id":"<user-uuid>"}},"data":{"id":"sub_abc","type":"subscriptions","attributes":{"customer_id":12345,"user_email":"test@test.com","status":"active"}}}`
-
-The computed HMAC-SHA256 signature is `4e09f5cc988185c88bdfb1e956e182307ef196b0ee693f9de78a6358dbb3b4f6`. Run:
+You can simulate a webhook request locally using `curl` by manually computing the `X-Razorpay-Signature` header.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/billing/webhook \
   -H "Content-Type: application/json" \
-  -H "X-Signature: 4e09f5cc988185c88bdfb1e956e182307ef196b0ee693f9de78a6358dbb3b4f6" \
-  -d '{"meta":{"event_name":"subscription_created","webhook_id":"evt_123","custom_data":{"user_id":"<user-uuid>"}},"data":{"id":"sub_abc","type":"subscriptions","attributes":{"customer_id":12345,"user_email":"test@test.com","status":"active"}}}'
+  -H "X-Razorpay-Signature: <computed_hmac_sha256_hex>" \
+  -d '{"event":"payment.authorized","id":"evt_123","payload":{"payment":{"entity":{"id":"pay_123","notes":{"user_id":"<user-uuid>","plan":"emerald"}}}}}'
 ```
 
 ---
@@ -219,7 +214,7 @@ docker compose exec redis redis-cli KEYS "forecast:*"
 2. Upload CSV: `POST /api/v1/transactions/upload`
 3. View transactions: `GET /api/v1/transactions`
 4. View summary: `GET /api/v1/transactions/summary`
-5. Upgrade to Pro (DB or Lemon Squeezy)
+5. Upgrade to Pro (DB or Razorpay)
 6. Re-login to refresh JWT
 7. Get forecast: `GET /api/v1/forecast?horizon=30`
 8. Open frontend: `http://localhost:3000`

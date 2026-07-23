@@ -41,7 +41,7 @@
 - [ ] Dashboard renders with transactions
 - [ ] Forecast generates results
 - [ ] AI Chat responds (test with Pro plan)
-- [ ] Billing upgrade flow completes (Lemon Squeezy checkout → success redirect → confetti)
+- [ ] Billing upgrade flow completes (Razorpay checkout → success redirect → confetti)
 
 ## Monitoring
 

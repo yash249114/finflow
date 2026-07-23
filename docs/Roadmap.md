@@ -31,7 +31,7 @@ FinFlow's product roadmap — from current capabilities to future vision.
 
 ### Billing
 - [x] 3-tier SaaS billing (Free / Pro / Max)
-- [x] Lemon Squeezy integration (checkout, portal, webhooks)
+- [x] Razorpay integration (checkout, webhooks, subscription lifecycle)
 - [x] 10-currency regional pricing
 - [x] Webhook idempotency
 - [x] HMAC signature verification
@@ -196,7 +196,7 @@ Have an idea? Here's how it gets prioritized:
 | Database | PostgreSQL 16 | + TimescaleDB for time-series |
 | Cache | Redis 7 | + Upstash for serverless edge |
 | Auth | Supabase | + Custom OAuth provider |
-| Billing | Lemon Squeezy | + Stripe direct |
+| Billing | Razorpay | + Stripe direct |
 
 ---
 

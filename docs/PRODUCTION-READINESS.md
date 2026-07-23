@@ -130,7 +130,7 @@ curl http://localhost:8001/health
 - [ ] Set JWT_SECRET to a secure random string (32+ chars)
 - [ ] Set ML_API_KEY for API-ML communication
 - [ ] Configure Supabase project credentials
-- [ ] Set up Lemon Squeezy billing (optional)
+- [ ] Set up Razorpay billing (optional)
 - [ ] Configure domain DNS
 - [ ] Set up SSL/TLS certificates
 - [ ] Configure backup strategy for PostgreSQL

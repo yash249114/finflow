@@ -317,26 +317,43 @@ func (c *Copilot) callGemini(ctx context.Context, req ChatRequest) (string, erro
 }
 
 func (c *Copilot) postJSON(ctx context.Context, url string, headers map[string]string, body []byte, extract func([]byte) (string, error)) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return "", err
+	var lastErr error
+	for attempt := 0; attempt <= 2; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(1<<uint(attempt-1)) * 500 * time.Millisecond
+			select {
+			case <-ctx.Done():
+				return "", ctx.Err()
+			case <-time.After(backoff):
+			}
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+		if err != nil {
+			return "", err
+		}
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode >= 500 {
+			lastErr = fmt.Errorf("provider error: %s", resp.Status)
+			continue
+		}
+		if resp.StatusCode >= 300 {
+			return "", fmt.Errorf("provider error: %s", resp.Status)
+		}
+		var buf bytes.Buffer
+		if _, err := buf.ReadFrom(resp.Body); err != nil {
+			return "", err
+		}
+		return extract(buf.Bytes())
 	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		return "", fmt.Errorf("provider error: %s", resp.Status)
-	}
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return "", err
-	}
-	return extract(buf.Bytes())
+	return "", fmt.Errorf("provider after retries: %w", lastErr)
 }
 
 // jitter avoids deterministic confidence collisions in tests.

@@ -8,9 +8,15 @@ export default defineConfig({
   retries: 1,
   reporter: [['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.BASE_URL || 'https://finflow-3js0lbb1a-yash249114s-projects.vercel.app',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
+  },
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },

@@ -1,4 +1,3 @@
-// api/internal/db/user_repo.go
 package db
 
 import (
@@ -11,25 +10,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// UserRepo handles all user-related database operations.
 type UserRepo struct {
 	pool *pgxpool.Pool
 }
 
-// NewUserRepo creates a new UserRepo.
 func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	return &UserRepo{pool: pool}
 }
 
-// GetByID retrieves a user by their UUID.
 func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
+		`SELECT id, email, full_name, plan, razorpay_customer_id, created_at
 		 FROM users WHERE id = $1`,
 		id,
 	).Scan(&user.ID, &user.Email, &user.FullName,
-		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
+		&user.Plan, &user.RazorpayCustomerID, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -39,7 +35,6 @@ func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error)
 	return user, nil
 }
 
-// UpdatePlan changes a user's subscription plan.
 func (r *UserRepo) UpdatePlan(ctx context.Context, userID, plan string) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE users SET plan = $1 WHERE id = $2`,
@@ -51,39 +46,8 @@ func (r *UserRepo) UpdatePlan(ctx context.Context, userID, plan string) error {
 	return nil
 }
 
-// UpdateLemonSqueezyCustomerID saves the Lemon Squeezy customer ID for a user.
-func (r *UserRepo) UpdateLemonSqueezyCustomerID(ctx context.Context, userID, customerID string) error {
-	_, err := r.pool.Exec(ctx,
-		`UPDATE users SET lemonsqueezy_customer_id = $1 WHERE id = $2`,
-		customerID, userID,
-	)
-	if err != nil {
-		return fmt.Errorf("updating lemonsqueezy customer id: %w", err)
-	}
-	return nil
-}
+// ─── Webhook Events (idempotency) ─────────────────────────
 
-// GetByLemonSqueezyCustomerID retrieves a user by their Lemon Squeezy customer ID.
-func (r *UserRepo) GetByLemonSqueezyCustomerID(ctx context.Context, customerID string) (*models.User, error) {
-	user := &models.User{}
-	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
-		 FROM users WHERE lemonsqueezy_customer_id = $1`,
-		customerID,
-	).Scan(&user.ID, &user.Email, &user.FullName,
-		&user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("querying user by lemonsqueezy customer id: %w", err)
-	}
-	return user, nil
-}
-
-// ─── Webhook Events ───────────────────────────────────────
-
-// IsWebhookEventProcessed checks if a webhook event was already processed (idempotency).
 func (r *UserRepo) IsWebhookEventProcessed(ctx context.Context, eventID string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx,
@@ -96,7 +60,6 @@ func (r *UserRepo) IsWebhookEventProcessed(ctx context.Context, eventID string) 
 	return exists, nil
 }
 
-// MarkWebhookEventProcessed records a webhook event as processed.
 func (r *UserRepo) MarkWebhookEventProcessed(ctx context.Context, eventID, eventName string) error {
 	_, err := r.pool.Exec(ctx,
 		`INSERT INTO webhook_events (event_id, event_name) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
@@ -108,7 +71,6 @@ func (r *UserRepo) MarkWebhookEventProcessed(ctx context.Context, eventID, event
 	return nil
 }
 
-// GetTransactionCount returns total transaction count for a user.
 func (r *UserRepo) GetTransactionCount(ctx context.Context, userID string) (int, error) {
 	var count int
 	err := r.pool.QueryRow(ctx,

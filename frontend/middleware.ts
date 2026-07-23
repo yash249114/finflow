@@ -19,13 +19,13 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Use fallback dummy values during next build/static generation
-  const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co'
-  const supabaseUrl = rawSupabaseUrl.replace(/\/+$/, '')
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+  // Check if we have real Supabase credentials (not placeholders)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '')
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // If using placeholder variables (e.g. at build time), skip middleware execution
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  // Skip middleware if no real Supabase config (placeholders or empty)
+  const isPlaceholder = supabaseUrl?.includes('placeholder') ?? true
+  if (!supabaseUrl || !supabaseAnonKey || isPlaceholder) {
     return response
   }
 

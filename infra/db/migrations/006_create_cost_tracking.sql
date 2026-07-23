@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS cost_tracking (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID REFERENCES users(id) ON DELETE SET NULL,
-    service         VARCHAR(50) NOT NULL,         -- 'openai' | 'anthropic' | 'gemini' | 'ml-local' | 'supabase' | 'lemonsqueezy'
+    service         VARCHAR(50) NOT NULL,         -- 'openai' | 'anthropic' | 'gemini' | 'ml-local' | 'supabase' | 'razorpay'
     operation       VARCHAR(100) NOT NULL,        -- 'classify' | 'forecast' | 'chat' | 'embeddings'
     model           VARCHAR(100),                 -- 'gpt-4o-mini' | 'claude-3-5-haiku' | 'gemini-1.5-flash' etc.
     input_tokens    INTEGER DEFAULT 0,

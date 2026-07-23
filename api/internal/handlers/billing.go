@@ -1,12 +1,8 @@
-// api/internal/handlers/billing.go
+﻿// api/internal/handlers/billing.go
 package handlers
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"crypto/subtle"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,46 +10,67 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/finflow/api/internal/billing"
 	"github.com/finflow/api/internal/db"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
-// BillingHandler handles Lemon Squeezy billing endpoints.
 type BillingHandler struct {
-	userRepo      *db.UserRepo
-	apiKey        string
-	storeID       string
-	variantID     string
-	webhookSecret string
-	frontendURL   string
+	userRepo    *db.UserRepo
+	billingSvc  *billing.SubscriptionService
+	webhookHdlr *billing.WebhookHandler
+	apiKey      string
+	storeID     string
+	variantID   string
+	frontendURL string
 }
 
-// NewBillingHandler creates a new BillingHandler.
-func NewBillingHandler(userRepo *db.UserRepo, apiKey, storeID, variantID, webhookSecret, frontendURL string) *BillingHandler {
+func NewBillingHandler(
+	userRepo *db.UserRepo,
+	billingSvc *billing.SubscriptionService,
+	webhookHdlr *billing.WebhookHandler,
+	apiKey, storeID, variantID, frontendURL string,
+) *BillingHandler {
 	return &BillingHandler{
-		userRepo:      userRepo,
-		apiKey:        apiKey,
-		storeID:       storeID,
-		variantID:     variantID,
-		webhookSecret: webhookSecret,
-		frontendURL:   frontendURL,
+		userRepo:    userRepo,
+		billingSvc:  billingSvc,
+		webhookHdlr: webhookHdlr,
+		apiKey:      apiKey,
+		storeID:     storeID,
+		variantID:   variantID,
+		frontendURL: frontendURL,
 	}
 }
 
-// CreateCheckout creates a Lemon Squeezy checkout session for the Pro plan.
+type CreateCheckoutRequest struct {
+	Plan         string `json:"plan" binding:"required"`
+	BillingCycle string `json:"billing_cycle"`
+	CheckoutURL  string `json:"checkout_url"`
+}
+
 func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 	userID := c.GetString("user_id")
 	email, _ := c.Get("email")
 	emailStr, _ := email.(string)
+
+	var req CreateCheckoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req.Plan = "emerald"
+		req.BillingCycle = "monthly"
+	}
+
+	variantID := h.resolveVariantID(req.Plan, req.BillingCycle)
 
 	frontendURL := h.frontendURL
 	if frontendURL == "" {
 		frontendURL = "http://localhost:3000"
 	}
 	redirectURL := fmt.Sprintf("%s/settings/billing?success=true", frontendURL)
+	if req.CheckoutURL != "" {
+		redirectURL = req.CheckoutURL
+	}
 
-	// Build request payload for Lemon Squeezy Checkouts API
 	payload := map[string]interface{}{
 		"data": map[string]interface{}{
 			"type": "checkouts",
@@ -78,7 +95,7 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 				"variant": map[string]interface{}{
 					"data": map[string]interface{}{
 						"type": "variants",
-						"id":   h.variantID,
+						"id":   variantID,
 					},
 				},
 			},
@@ -87,26 +104,24 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to marshal checkout payload")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", "https://api.lemonsqueezy.com/v1/checkouts", bytes.NewReader(bodyBytes))
+	reqHTTP, err := http.NewRequestWithContext(c.Request.Context(), "POST", "https://api.lemonsqueezy.com/v1/checkouts", bytes.NewReader(bodyBytes))
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to create checkout request")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	req.Header.Set("Authorization", "Bearer "+h.apiKey)
-	req.Header.Set("Content-Type", "application/vnd.api+json")
-	req.Header.Set("Accept", "application/vnd.api+json")
+	reqHTTP.Header.Set("Authorization", "Bearer "+h.apiKey)
+	reqHTTP.Header.Set("Content-Type", "application/vnd.api+json")
+	reqHTTP.Header.Set("Accept", "application/vnd.api+json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := client.Do(reqHTTP)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to perform checkout request to Lemon Squeezy")
+		log.Error().Err(err).Str("user_id", userID).Msg("checkout request failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to contact billing provider"})
 		return
 	}
@@ -114,13 +129,12 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to read checkout response body")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Str("user_id", userID).Msg("lemon squeezy returned error status")
+		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("lemon squeezy error")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing provider returned an error"})
 		return
 	}
@@ -132,9 +146,7 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 			} `json:"attributes"`
 		} `json:"data"`
 	}
-
 	if err := json.Unmarshal(respBody, &resData); err != nil {
-		log.Error().Err(err).Str("body", string(respBody)).Str("user_id", userID).Msg("failed to parse checkout response")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -142,7 +154,6 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"checkout_url": resData.Data.Attributes.URL})
 }
 
-// CreatePortal creates a Lemon Squeezy Customer Portal session redirect URL.
 func (h *BillingHandler) CreatePortal(c *gin.Context) {
 	userID := c.GetString("user_id")
 
@@ -160,7 +171,6 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 	filterURL := fmt.Sprintf("https://api.lemonsqueezy.com/v1/customers?filter[email]=%s", url.QueryEscape(user.Email))
 	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", filterURL, nil)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to create customers request")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -171,7 +181,6 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to perform customer request to Lemon Squeezy")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to contact billing provider"})
 		return
 	}
@@ -179,13 +188,12 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("failed to read customers response body")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Str("user_id", userID).Msg("lemon squeezy customer query returned error status")
+		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("lemon squeezy customer query error")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing provider returned an error"})
 		return
 	}
@@ -199,9 +207,7 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 			} `json:"attributes"`
 		} `json:"data"`
 	}
-
 	if err := json.Unmarshal(respBody, &resData); err != nil {
-		log.Error().Err(err).Str("body", string(respBody)).Str("user_id", userID).Msg("failed to parse customers response")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -220,160 +226,121 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"portal_url": portalURL})
 }
 
-// Webhook handles Lemon Squeezy webhook events.
 func (h *BillingHandler) Webhook(c *gin.Context) {
-	body, err := io.ReadAll(c.Request.Body)
+	h.webhookHdlr.HandleWebhook(c)
+}
+
+func (h *BillingHandler) GetSubscription(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	state, err := h.billingSvc.GetState(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot read request body"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "subscription not found"})
 		return
 	}
 
-	// Verify Lemon Squeezy signature
-	signature := c.GetHeader("X-Signature")
-	mac := hmac.New(sha256.New, []byte(h.webhookSecret))
-	mac.Write(body)
-	expectedSignature := hex.EncodeToString(mac.Sum(nil))
+	c.JSON(http.StatusOK, gin.H{
+		"subscription": state,
+		"plan": map[string]string{
+			"tier":    state.Plan,
+			"name":    state.PlanName,
+			"variant": state.VariantSlug,
+			"cycle":   state.BillingCycle,
+			"status":  state.Status,
+		},
+	})
+}
 
-	if subtle.ConstantTimeCompare([]byte(expectedSignature), []byte(signature)) != 1 {
-		log.Warn().Msg("invalid lemon squeezy webhook signature")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signature"})
+type ChangePlanRequest struct {
+	Plan         string `json:"plan" binding:"required"`
+	BillingCycle string `json:"billing_cycle"`
+	AtPeriodEnd  bool   `json:"at_period_end"`
+}
+
+func (h *BillingHandler) ChangePlan(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var req ChangePlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "plan is required"})
 		return
 	}
 
-	// Parse payload
-	type webhookPayload struct {
-		Meta struct {
-			EventName  string            `json:"event_name"`
-			WebhookID  string            `json:"webhook_id"`
-			CustomData map[string]string `json:"custom_data"`
-		} `json:"meta"`
-		Data struct {
-			ID         string `json:"id"`
-			Type       string `json:"type"`
-			Attributes struct {
-				CustomerID interface{} `json:"customer_id"`
-				UserEmail  string      `json:"user_email"`
-				Status     string      `json:"status"`
-			} `json:"attributes"`
-		} `json:"data"`
-	}
-
-	var payload webhookPayload
-	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Error().Err(err).Msg("failed to unmarshal webhook body")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload json"})
-		return
-	}
-
-	eventID := payload.Meta.WebhookID
-	eventName := payload.Meta.EventName
-
-	if eventID == "" {
-		log.Warn().Msg("missing webhook_id in payload")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing webhook_id"})
-		return
-	}
-
-	// Idempotency check
-	processed, err := h.userRepo.IsWebhookEventProcessed(c.Request.Context(), eventID)
+	current, err := h.billingSvc.GetState(c.Request.Context(), userID)
 	if err != nil {
-		log.Error().Err(err).Str("event_id", eventID).Msg("checking webhook event idempotency")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	if processed {
-		log.Info().Str("event_id", eventID).Msg("skipping already-processed webhook event")
-		c.JSON(http.StatusOK, gin.H{"ok": true, "message": "already processed"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "subscription not found"})
 		return
 	}
 
-	// Format customer ID as string safely
-	var customerIDStr string
-	if payload.Data.Attributes.CustomerID != nil {
-		switch v := payload.Data.Attributes.CustomerID.(type) {
-		case float64:
-			customerIDStr = fmt.Sprintf("%.0f", v)
-		case string:
-			customerIDStr = v
-		default:
-			customerIDStr = fmt.Sprintf("%v", v)
-		}
+	targetPlan := billing.PlanForVariant(req.Plan)
+	currentPlan := billing.PlanForVariant(current.VariantSlug)
+	isUpgrade := targetPlan.Tier > currentPlan.Tier
+
+	if isUpgrade {
+		c.JSON(http.StatusOK, gin.H{
+			"action":   "upgrade",
+			"target":   req.Plan,
+			"current":  current.VariantSlug,
+			"checkout": true,
+			"message":  "Please complete checkout to upgrade your plan.",
+		})
+		return
 	}
 
-	// Determine user to act on
-	var userID string
-	if payload.Meta.CustomData != nil {
-		userID = payload.Meta.CustomData["user_id"]
-	}
-
-	// If no userID is in custom_data, resolve from DB via customer ID
-	if userID == "" && customerIDStr != "" {
-		user, err := h.userRepo.GetByLemonSqueezyCustomerID(c.Request.Context(), customerIDStr)
-		if err == nil && user != nil {
-			userID = user.ID
-		}
-	}
-
-	log.Info().Str("event_name", eventName).Str("user_id", userID).Str("customer_id", customerIDStr).Msg("processing webhook event")
-
-	switch eventName {
-	case "subscription_created":
-		if userID == "" {
-			log.Error().Msg("subscription_created event missing user_id context")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "missing user_id context"})
+	if req.AtPeriodEnd || current.CancelAtPeriodEnd {
+		if err := h.billingSvc.Downgrade(c.Request.Context(), userID, req.Plan); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to schedule downgrade"})
 			return
 		}
-
-		// Upgrade to pro
-		if err := h.userRepo.UpdatePlan(c.Request.Context(), userID, "pro"); err != nil {
-			log.Error().Err(err).Str("user_id", userID).Msg("upgrading user plan to pro")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update plan"})
+		c.JSON(http.StatusOK, gin.H{
+			"action":  "downgrade_scheduled",
+			"target":  req.Plan,
+			"message": "Your plan will change at the end of the current billing period.",
+		})
+	} else {
+		if err := h.billingSvc.Cancel(c.Request.Context(), userID, false); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process downgrade"})
 			return
 		}
+		c.JSON(http.StatusOK, gin.H{
+			"action":  "downgraded",
+			"target":  "blue-sapphire",
+			"message": "Your plan has been changed to Blue Sapphire (free).",
+		})
+	}
+}
 
-		// Save Lemon Squeezy customer ID
-		if customerIDStr != "" {
-			if err := h.userRepo.UpdateLemonSqueezyCustomerID(c.Request.Context(), userID, customerIDStr); err != nil {
-				log.Error().Err(err).Str("user_id", userID).Msg("saving lemonsqueezy customer id")
-			}
-		}
-		log.Info().Str("user_id", userID).Msg("subscription created: upgraded user plan to pro")
+func (h *BillingHandler) CancelSubscription(c *gin.Context) {
+	userID := c.GetString("user_id")
 
-	case "subscription_resumed":
-		if userID != "" {
-			if err := h.userRepo.UpdatePlan(c.Request.Context(), userID, "pro"); err != nil {
-				log.Error().Err(err).Str("user_id", userID).Msg("upgrading user plan to pro on resume")
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update plan"})
-				return
-			}
-			log.Info().Str("user_id", userID).Msg("subscription resumed: user plan set to pro")
-		} else {
-			log.Warn().Msg("subscription_resumed event could not resolve user")
-		}
-
-	case "subscription_cancelled", "subscription_expired":
-		if userID != "" {
-			if err := h.userRepo.UpdatePlan(c.Request.Context(), userID, "free"); err != nil {
-				log.Error().Err(err).Str("user_id", userID).Msg("downgrading user plan to free")
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update plan"})
-				return
-			}
-			log.Info().Str("user_id", userID).Msg("subscription cancelled/expired: user plan set to free")
-		} else {
-			log.Warn().Msg("subscription cancelled/expired event could not resolve user")
-		}
-
-	case "order_created":
-		log.Info().Str("event_id", eventID).Msg("order_created webhook received (log only)")
-
-	default:
-		log.Debug().Str("event_name", eventName).Msg("unhandled lemon squeezy event")
+	current, err := h.billingSvc.GetState(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "subscription not found"})
+		return
 	}
 
-	// Mark event as processed
-	if err := h.userRepo.MarkWebhookEventProcessed(c.Request.Context(), eventID, eventName); err != nil {
-		log.Error().Err(err).Str("event_id", eventID).Msg("marking webhook event processed")
+	atPeriodEnd := current.Status == "active" || current.Status == "trial"
+	if err := h.billingSvc.Cancel(c.Request.Context(), userID, atPeriodEnd); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to cancel subscription"})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"ok": true})
+	if atPeriodEnd {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Your subscription will be cancelled at the end of the current billing period.",
+			"status":  "cancelled_at_period_end",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Your subscription has been cancelled. You have been moved to the free plan.",
+			"status":  "cancelled",
+		})
+	}
+}
+
+func (h *BillingHandler) resolveVariantID(plan, cycle string) string {
+	if h.variantID != "" {
+		return h.variantID
+	}
+	return plan
 }

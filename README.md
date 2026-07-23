@@ -59,7 +59,7 @@
 | **Anomaly Detection** | Automatic flagging of unusual spending patterns using statistical deviation analysis. |
 | **Real-Time Dashboard** | Recharts-powered analytics: cash flow charts, category breakdowns, financial health score, recent transactions. |
 | **AIOps Self-Healing** | Telemetry-driven incident detection, auto-retry, GitHub issue drafting, email alerts, and health scoring (0-100). |
-| **Billing** | 3-tier SaaS billing via Lemon Squeezy with regional pricing (10 currencies), checkout, portal, and webhook idempotency. |
+| **Billing** | 3-tier SaaS billing via Razorpay withh regional pricing (10 currencies), checkout, portal, and webhook idempotency. |
 | **Security** | JWT auth (cookie + Bearer), CSRF protection, 10 security headers, rate limiting (sliding window), path traversal prevention. |
 | **Admin Panel** | User management, system health monitoring, AIOps dashboard for platform operators. |
 
@@ -83,7 +83,7 @@
 ├──────────────────────────────────────────────────────────────┤
 │                      INFRASTRUCTURE                          │
 │  PostgreSQL 16 · Redis 7 · Docker · Nginx · GitHub Actions   │
-│  Vercel (FE) · Render (API/ML) · Lemon Squeezy (billing)    │
+│  Vercel (FE) — Render (API/ML) — Razorpay (billing)    │
 ├──────────────────────────────────────────────────────────────┤
 │                      AI PROVIDERS                            │
 │  OpenAI (GPT-4o) · Anthropic (Claude 3.5) · Google (Gemini)  │
@@ -135,7 +135,7 @@ For the full architecture breakdown, see [docs/Architecture.md](docs/Architectur
 - **Python** 3.11+
 - **Docker** & Docker Compose
 - **Supabase** project (free tier works)
-- **Lemon Squeezy** account (for billing)
+- **Razorpay** account (for payment processing)
 
 ### 1. Clone & Configure
 
@@ -300,7 +300,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 | `GET` | `/api/v1/forecast/quality` | Pro | Forecast accuracy metrics |
 | `POST` | `/api/v1/ai/chat` | Yes | AI copilot chat |
 | `GET` | `/api/v1/ai/recommendations` | Yes | Financial recommendations |
-| `POST` | `/api/v1/billing/create-checkout` | Yes | Create Lemon Squeezy checkout |
+| `POST` | `/api/v1/billing/checkout` | Yes | Create Razorpay order for checkout |
 | `POST` | `/api/v1/billing/portal` | Yes | Open billing portal |
 | `GET` | `/health` | No | API health check |
 | `GET` | `/api/aiops/health` | No | AIOps system health |
@@ -505,7 +505,7 @@ Built by **Yash** — [GitHub](https://github.com/yash249114) · [LinkedIn](http
 - **[Radix UI](https://www.radix-ui.com/)** — Accessible UI primitives
 - **[Framer Motion](https://www.framer.com/motion/)** — Animation library
 - **[Supabase](https://supabase.com/)** — Auth and database
-- **[Lemon Squeezy](https://www.lemonsqueezy.com/)** — SaaS billing
+- **[Razorpay](https://razorpay.com/)** — Payment processing
 
 ---
 

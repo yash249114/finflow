@@ -9,12 +9,12 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash   TEXT NOT NULL,
     full_name       VARCHAR(255),
     plan            VARCHAR(50) NOT NULL DEFAULT 'free',  -- 'free' | 'pro'
-    lemonsqueezy_customer_id VARCHAR(255),
+    razorpay_customer_id VARCHAR(255),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Index for email lookups during login
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
--- Index for Lemon Squeezy customer lookups during webhook processing
-CREATE INDEX IF NOT EXISTS idx_users_lemonsqueezy_customer_id ON users (lemonsqueezy_customer_id);
+-- Index for Razorpay customer lookups during webhook processing
+CREATE INDEX IF NOT EXISTS idx_users_razorpay_customer_id ON users (razorpay_customer_id);

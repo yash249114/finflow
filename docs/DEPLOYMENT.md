@@ -14,7 +14,7 @@ FinFlow supports multiple deployment strategies. This guide covers Docker Compos
 | Node.js | 20+ | For manual frontend deployment |
 | Python | 3.11+ | For manual ML service deployment |
 | Supabase | Free tier+ | Authentication provider |
-| Lemon Squeezy | Account | Billing (optional for free tier) |
+| Razorpay | Account | Payment processing (optional for free tier) |
 
 ---
 
@@ -219,7 +219,9 @@ psql $DATABASE_URL -f migrations/004_create_webhook_events.sql
 | `OPENAI_API_KEY` | OpenAI API key (for AI copilot) | — |
 | `ANTHROPIC_API_KEY` | Anthropic API key (for AI copilot) | — |
 | `GEMINI_API_KEY` | Google Gemini API key (for AI copilot) | — |
-| `LEMONSQUEEZY_API_KEY` | Lemon Squeezy API key (for billing) | — |
+| `RAZORPAY_KEY_ID` | Razorpay key ID (for billing) | — |
+| `RAZORPAY_KEY_SECRET` | Razorpay key secret (for billing) | — |
+| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook secret (for billing) | — |
 | `APP_ENV` | Environment (development/production) | development |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | Admin user email | — |
 

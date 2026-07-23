@@ -10,7 +10,7 @@ type User struct {
 	Email                  string    `json:"email"`
 	FullName               string    `json:"full_name"`
 	Plan                   string    `json:"plan"`
-	LemonSqueezyCustomerID *string   `json:"lemonsqueezy_customer_id,omitempty"`
+	RazorpayCustomerID *string   `json:"razorpay_customer_id,omitempty"`
 	CreatedAt              time.Time `json:"created_at"`
 }
 

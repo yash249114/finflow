@@ -261,5 +261,5 @@ Chat Request ──► Plan Check ──► Provider Routing ──► Response 
 | **PostgreSQL** | ACID compliance, JSON support, mature ecosystem |
 | **Redis** | Sub-millisecond caching, native streams for event processing |
 | **Gin** | Minimal overhead (3μs middleware), middleware composition |
-| **Lemon Squeezy** | Merchant of record (handles global tax compliance) |
+| **Razorpay** | Payment processing and subscription management |
 | **Supabase Auth** | Managed auth with OAuth, MFA, and row-level security |

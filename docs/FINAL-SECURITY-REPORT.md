@@ -48,12 +48,12 @@ The nginx reverse proxy now ships with a fully configured TLS server block (prev
 
 | Before | After |
 |--------|-------|
-| `connect-src 'self' https: http://localhost:\* http://127.0.0.1:\*` | `connect-src 'self' http://localhost:\* http://127.0.0.1:\* https://\*.supabase.co https://api.lemonsqueezy.com https://api.web3forms.com https://api.resend.com` |
+| `connect-src 'self' https: http://localhost:\* http://127.0.0.1:\*` | `connect-src 'self' http://localhost:\* http://127.0.0.1:\* https://\*.supabase.co https://api.razorpay.com https://api.web3forms.com https://api.resend.com` |
 
 - **Removed** blanket `https:` wildcard that allowed data exfiltration to any HTTPS origin
 - **Added** pinned origins for all known external services:
   - `https://*.supabase.co` — Supabase Auth
-  - `https://api.lemonsqueezy.com` — Lemon Squeezy billing
+  - `https://api.razorpay.com` — Razorpay payment processing
   - `https://api.web3forms.com` — Web3Forms support tickets
   - `https://api.resend.com` — Resend transactional emails
 - **Preserved** `http://localhost:*` and `http://127.0.0.1:*` for local development

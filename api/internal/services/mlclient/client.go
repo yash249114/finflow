@@ -18,6 +18,7 @@ type Client struct {
 	baseURL    string
 	apiKey     string
 	httpClient *http.Client
+	maxRetries int
 }
 
 // NewClient creates a new ML service client.
@@ -28,7 +29,43 @@ func NewClient(baseURL, apiKey string) *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		maxRetries: 3,
 	}
+}
+
+// doWithRetry executes an HTTP request with exponential backoff retry.
+func (c *Client) doWithRetry(ctx context.Context, req *http.Request) (*http.Response, error) {
+	var lastErr error
+	for attempt := 0; attempt <= c.maxRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(1<<uint(attempt-1)) * 500 * time.Millisecond
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(backoff):
+			}
+		}
+		// Clone request for retry (body can only be read once)
+		var clone *http.Request
+		if attempt > 0 {
+			clone = req.Clone(ctx)
+		} else {
+			clone = req
+		}
+		resp, err := c.httpClient.Do(clone)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		// Retry on 5xx errors
+		if resp.StatusCode >= 500 {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("ml-service returned %d", resp.StatusCode)
+			continue
+		}
+		return resp, nil
+	}
+	return nil, fmt.Errorf("ml-service after %d retries: %w", c.maxRetries, lastErr)
 }
 
 func (c *Client) authHeaders() http.Header {
@@ -57,7 +94,7 @@ func (c *Client) Classify(ctx context.Context, descriptions []string) ([]string,
 		req.Header[k] = v
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doWithRetry(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("calling ml-service /classify: %w", err)
 	}
@@ -96,7 +133,7 @@ func (c *Client) Forecast(ctx context.Context, transactions []models.ForecastTra
 		req.Header[k] = v
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doWithRetry(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("calling ml-service /forecast: %w", err)
 	}
@@ -122,7 +159,7 @@ func (c *Client) Health(ctx context.Context) error {
 		return fmt.Errorf("creating health request: %w", err)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doWithRetry(ctx, req)
 	if err != nil {
 		return fmt.Errorf("calling ml-service /health: %w", err)
 	}

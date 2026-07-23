@@ -13,6 +13,7 @@ import (
 
 	"github.com/finflow/api/internal/aiops"
 	"github.com/finflow/api/internal/analytics"
+	"github.com/finflow/api/internal/billing"
 	"github.com/finflow/api/internal/business"
 	"github.com/finflow/api/internal/config"
 	"github.com/finflow/api/internal/costing"
@@ -127,13 +128,14 @@ func main() {
 	experimentService := experiment.NewService(pool)
 	limitService := limSvc.NewService(pool, rdb, configStore, eventStore)
 	recEngine := recommendations.NewEngine(pool, configStore)
+	billingSvc := billing.NewSubscriptionService(pool)
 
 	// ── Handlers ─────────────────────────────────────────
 	authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, cfg.AppEnv)
 	uploadHandler := handlers.NewUploadHandler(txRepo, userRepo, mlClient, rdb)
 	txHandler := handlers.NewTransactionHandler(txRepo)
 	forecastHandler := handlers.NewForecastHandler(txRepo, mlClient, rdb)
-	billingHandler := handlers.NewBillingHandler(userRepo, cfg.LemonSqueezyAPIKey, cfg.LemonSqueezyStoreID, cfg.LemonSqueezyVariantID, cfg.LemonSqueezyWebhookSecret, cfg.FrontendURL)
+	billingHandler := handlers.NewBillingHandler(userRepo, billingSvc, cfg.RazorpayKeyID, cfg.RazorpayKeySecret, cfg.RazorpayWebhookSecret, cfg.FrontendURL)
 	aiChatHandler := handlers.NewAIChatHandler(copilot, alerter)
 	recommendationsHandler := handlers.NewRecommendationsHandler(txRepo)
 	entitlementHandler := handlers.NewEntitlementHandler(entEngine)
@@ -178,7 +180,11 @@ func main() {
 		auth.POST("/logout", authHandler.Logout)
 	}
 
-	// ── Billing webhook (no JWT) ───────────────────────
+	// ── Billing (Razorpay) ─────────────────────────────
+	// Public endpoints (no auth)
+	r.GET("/api/v1/billing/plans", billingHandler.ListPlans)
+
+	// Webhook (no JWT — verified by Razorpay signature)
 	if cfg.BillingEnabled() {
 		r.POST("/api/v1/billing/webhook", billingHandler.Webhook)
 	}
@@ -216,10 +222,12 @@ func main() {
 		protected.GET("/transactions", txHandler.List)
 		protected.GET("/transactions/summary", txHandler.Summary)
 
-		// Billing (only registered when LemonSqueezy keys are present)
+		// Billing (Razorpay)
+		protected.POST("/billing/checkout", billingHandler.CreateCheckout)
+		protected.GET("/billing/subscription", billingHandler.GetSubscription)
 		if cfg.BillingEnabled() {
-			protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
-			protected.POST("/billing/portal", billingHandler.CreatePortal)
+			protected.POST("/billing/checkout", billingHandler.CreateCheckout)
+			protected.GET("/billing/subscription", billingHandler.GetSubscription)
 		}
 
 		// AI Product Layer: Entitlements & Usage
@@ -505,8 +513,8 @@ func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Cli
 			}
 		}
 
-		// Billing (LemonSqueezy)
-		if cfg.LemonSqueezyAPIKey != "" {
+		// Billing (Razorpay)
+		if cfg.RazorpayKeyID != "" {
 			components["billing"] = "configured"
 		} else {
 			components["billing"] = "not_configured"
