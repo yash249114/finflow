@@ -40,13 +40,24 @@ func NewEngine(pool *pgxpool.Pool, rdb *redis.Client) *Engine {
 }
 
 // Start loads entitlements and starts the quota refresh worker.
+// If the database tables (features, tiers) do not exist yet (e.g. migrations
+// are pending), the engine starts in degraded mode with an empty catalog and
+// retries every 5 minutes via the refresh loop.
 func (e *Engine) Start(ctx context.Context) error {
 	if err := e.load(ctx); err != nil {
-		return fmt.Errorf("loading entitlements: %w", err)
+		log.Warn().Err(err).Msg("Entitlement engine started in degraded mode — feature catalog unavailable")
+	} else {
+		log.Info().Msg("Entitlement engine started")
 	}
 	go e.refreshLoop(ctx)
-	log.Info().Msg("Entitlement engine started")
 	return nil
+}
+
+// Healthy returns true if the engine has successfully loaded features and tiers.
+func (e *Engine) Healthy() bool {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	return len(e.features) > 0 && len(e.tiers) > 0
 }
 
 // Stop stops the quota refresh worker.
@@ -55,6 +66,9 @@ func (e *Engine) Stop() {
 }
 
 // load fetches all features and tiers from the database.
+// If the underlying tables are missing (migrations pending) the error is
+// returned but callers are expected to treat it as non-fatal — the engine
+// retries on the next refresh cycle.
 func (e *Engine) load(ctx context.Context) error {
 	features, err := e.repo.GetAllFeatures(ctx)
 	if err != nil {

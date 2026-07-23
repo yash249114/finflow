@@ -82,7 +82,9 @@ services:
 
   # ── Go API ─────────────────────────────────────────
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     container_name: finflow-api
     restart: unless-stopped
     depends_on:

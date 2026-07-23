@@ -59,6 +59,36 @@
       "description": "",
       "artifact_path": "",
       "checksum": ""
+    },
+    {
+      "model_id": "c2b7afd1-9e96-4627-969a-c1ae72eec61f",
+      "name": "classifier",
+      "model_type": "logistic_regression",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.6851895,
+      "updated_at": 1784803430.6851895,
+      "trained_at": 1784803430.68719,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "max_iter": 1000,
+        "C": 1.0
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
     }
   ],
   "classifier:lightgbm": [
@@ -101,6 +131,36 @@
       "created_at": 1784802177.7992322,
       "updated_at": 1784802177.7992322,
       "trained_at": 1784802177.8022695,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 500,
+        "learning_rate": 0.1
+      },
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "5cf08afa-2238-4f78-a47e-29a6d0d89b3b",
+      "name": "classifier",
+      "model_type": "lightgbm",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.68919,
+      "updated_at": 1784803430.68919,
+      "trained_at": 1784803430.6911898,
       "deployed_at": null,
       "training_rows": 0,
       "training_features": 0,
@@ -183,6 +243,36 @@
       "description": "",
       "artifact_path": "",
       "checksum": ""
+    },
+    {
+      "model_id": "51309365-eb43-45c8-b707-60012c1e91b0",
+      "name": "classifier",
+      "model_type": "xgboost",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.6931956,
+      "updated_at": 1784803430.6931956,
+      "trained_at": 1784803430.6951966,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 500,
+        "max_depth": 6
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
     }
   ],
   "classifier:catboost": [
@@ -224,6 +314,35 @@
       "created_at": 1784802177.8112712,
       "updated_at": 1784802177.8112712,
       "trained_at": 1784802177.8137152,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "iterations": 500
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "3c635c48-4229-419d-bedd-0b2588358e4c",
+      "name": "classifier",
+      "model_type": "catboost",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.6971896,
+      "updated_at": 1784803430.6971896,
+      "trained_at": 1784803430.699189,
       "deployed_at": null,
       "training_rows": 0,
       "training_features": 0,
@@ -311,6 +430,39 @@
       "description": "",
       "artifact_path": "",
       "checksum": ""
+    },
+    {
+      "model_id": "d6939d5d-cf72-4925-a154-c7ce858fa1b8",
+      "name": "forecaster",
+      "model_type": "arima",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.7011888,
+      "updated_at": 1784803430.7011888,
+      "trained_at": 1784803430.7031884,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "order": [
+          1,
+          1,
+          1
+        ]
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
     }
   ],
   "forecaster:exponential_smoothing": [
@@ -352,6 +504,35 @@
       "created_at": 1784802177.821838,
       "updated_at": 1784802177.821838,
       "trained_at": 1784802177.8253665,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "trend": "add"
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "73f4fd2d-f8a6-4c7c-a4bb-935501fd9c0d",
+      "name": "forecaster",
+      "model_type": "exponential_smoothing",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.7051895,
+      "updated_at": 1784803430.7051895,
+      "trained_at": 1784803430.7071893,
       "deployed_at": null,
       "training_rows": 0,
       "training_features": 0,
@@ -427,6 +608,33 @@
       "description": "",
       "artifact_path": "",
       "checksum": ""
+    },
+    {
+      "model_id": "d7cce222-5526-4558-883d-33f1ef67ce6d",
+      "name": "forecaster",
+      "model_type": "prophet",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.7091892,
+      "updated_at": 1784803430.7091892,
+      "trained_at": 1784803430.7111886,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {},
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
     }
   ],
   "anomaly:isolation_forest": [
@@ -468,6 +676,35 @@
       "created_at": 1784802177.8355677,
       "updated_at": 1784802177.8355677,
       "trained_at": 1784802177.8390932,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "n_estimators": 100
+      },
+      "metrics": {
+        "accuracy": 0.91,
+        "confidence_score": 0.88,
+        "f1": 0.89
+      },
+      "tier": "emerald",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "add61b98-d2de-4c74-9aa4-709c5ecbf342",
+      "name": "anomaly",
+      "model_type": "isolation_forest",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.7142692,
+      "updated_at": 1784803430.7142692,
+      "trained_at": 1784803430.71727,
       "deployed_at": null,
       "training_rows": 0,
       "training_features": 0,
@@ -547,6 +784,35 @@
       "description": "",
       "artifact_path": "",
       "checksum": ""
+    },
+    {
+      "model_id": "2b22e26d-e892-4fbe-8e32-09d7d6274942",
+      "name": "anomaly",
+      "model_type": "zscore",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.7192717,
+      "updated_at": 1784803430.7192717,
+      "trained_at": 1784803430.7212696,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "threshold": 3.0
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "confidence_score": 0.8,
+        "f1": 0.82
+      },
+      "tier": "blue",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
     }
   ],
   "ensemble:ensemble": [
@@ -588,6 +854,35 @@
       "created_at": 1784802177.8513184,
       "updated_at": 1784802177.8513184,
       "trained_at": 1784802177.8551762,
+      "deployed_at": null,
+      "training_rows": 0,
+      "training_features": 0,
+      "hyperparameters": {
+        "ensemble_method": "stacking"
+      },
+      "metrics": {
+        "accuracy": 0.95,
+        "confidence_score": 0.93,
+        "f1": 0.94
+      },
+      "tier": "diamond",
+      "feature_names": [],
+      "target_name": "",
+      "parent_model_id": null,
+      "tags": [],
+      "description": "",
+      "artifact_path": "",
+      "checksum": ""
+    },
+    {
+      "model_id": "1f10fa07-f55d-4c42-94e9-c9b04ec80491",
+      "name": "ensemble",
+      "model_type": "ensemble",
+      "version": 1,
+      "status": "production",
+      "created_at": 1784803430.7232707,
+      "updated_at": 1784803430.7232707,
+      "trained_at": 1784803430.7262702,
       "deployed_at": null,
       "training_rows": 0,
       "training_features": 0,

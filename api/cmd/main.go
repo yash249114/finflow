@@ -103,7 +103,9 @@ func main() {
 	// ── AI Product Layer: Entitlements Engine ────────────
 	entEngine := entitlements.NewEngine(pool, rdb)
 	if err := entEngine.Start(ctx); err != nil {
-		log.Fatal().Err(err).Msg("starting entitlement engine")
+		log.Warn().Err(err).Msg("Entitlement engine started in degraded mode — feature catalog will load when migrations complete")
+	} else {
+		log.Info().Msg("Entitlement engine fully initialized")
 	}
 	defer entEngine.Stop()
 
@@ -163,8 +165,8 @@ func main() {
 	r.Use(middleware.RateLimit(cfg.RedisURL))
 
 	// ── Health ───────────────────────────────────────────
-	r.GET("/health", healthHandler(pool, rdb, cfg.MLServiceURL))
-	r.GET("/api/v1/health", healthHandler(pool, rdb, cfg.MLServiceURL))
+	r.GET("/health", healthHandler(pool, rdb, cfg.MLServiceURL, entEngine))
+	r.GET("/api/v1/health", healthHandler(pool, rdb, cfg.MLServiceURL, entEngine))
 
 	// ── Auth routes (no middleware) ──────────────────────
 	auth := r.Group("/api/v1/auth")
@@ -435,7 +437,7 @@ func monitorDependencies(ctx context.Context, rdb *redis.Client, pool interface 
 }
 
 // healthHandler returns a gin handler that reports the status of each dependency.
-func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Client, mlURL string) gin.HandlerFunc {
+func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Client, mlURL string, entEngine *entitlements.Engine) gin.HandlerFunc {
 	mlClient := &http.Client{Timeout: 5 * time.Second}
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
@@ -462,6 +464,18 @@ func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Cli
 			}
 		} else {
 			components["redis"] = "ok"
+		}
+
+		// Entitlement engine
+		if entEngine != nil {
+			if entEngine.Healthy() {
+				components["entitlements"] = "ok"
+			} else {
+				components["entitlements"] = "degraded"
+				if status == "ok" {
+					status = "degraded"
+				}
+			}
 		}
 
 		// ML service
