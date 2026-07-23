@@ -15,9 +15,9 @@ import (
 // It evaluates feature flags, manages usage, refreshes quotas,
 // and generates upgrade recommendations.
 type Engine struct {
-	pool    *pgxpool.Pool
-	rdb     *redis.Client
-	repo    *Repo
+	pool *pgxpool.Pool
+	rdb  *redis.Client
+	repo *Repo
 
 	mu       sync.RWMutex
 	features map[string]*Feature
@@ -284,12 +284,12 @@ func (e *Engine) EvaluateUpgrade(ctx context.Context, userID, currentTier string
 
 		usagePct := float64(current) / float64(*ent.LimitValue) * 100
 		hittingLimits = append(hittingLimits, FeatureLimit{
-			FeatureName:      feat.Name,
-			FeatureDisplay:   feat.DisplayName,
-			CurrentUsage:     current,
-			LimitValue:       *ent.LimitValue,
-			UsagePercentage:  usagePct,
-			IsAtLimit:        current >= *ent.LimitValue,
+			FeatureName:     feat.Name,
+			FeatureDisplay:  feat.DisplayName,
+			CurrentUsage:    current,
+			LimitValue:      *ent.LimitValue,
+			UsagePercentage: usagePct,
+			IsAtLimit:       current >= *ent.LimitValue,
 		})
 	}
 
@@ -345,5 +345,3 @@ func hash(s string) int {
 	}
 	return h
 }
-
-

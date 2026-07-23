@@ -21,7 +21,7 @@ func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id,
+		`SELECT id, email, full_name, plan, razorpay_customer_id,
 		        subscription_status, subscription_id, subscription_item_id, variant_id,
 		        billing_cycle, plan_name, trial_starts_at, trial_ends_at,
 		        current_period_starts_at, current_period_ends_at, cancel_at_period_end,
@@ -30,7 +30,7 @@ func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error)
 		 FROM users WHERE id = $1`,
 		id,
 	).Scan(
-		&user.ID, &user.Email, &user.FullName, &user.Plan, &user.LemonSqueezyCustomerID,
+		&user.ID, &user.Email, &user.FullName, &user.Plan, &user.RazorpayCustomerID,
 		&user.SubscriptionStatus, &user.SubscriptionID, &user.SubscriptionItemID, &user.VariantID,
 		&user.BillingCycle, &user.PlanName, &user.TrialStartsAt, &user.TrialEndsAt,
 		&user.CurrentPeriodStartsAt, &user.CurrentPeriodEndsAt, &user.CancelAtPeriodEnd,
@@ -57,29 +57,29 @@ func (r *UserRepo) UpdatePlan(ctx context.Context, userID, plan string) error {
 	return nil
 }
 
-func (r *UserRepo) UpdateLemonSqueezyCustomerID(ctx context.Context, userID, customerID string) error {
+func (r *UserRepo) UpdateRazorpayCustomerID(ctx context.Context, userID, customerID string) error {
 	_, err := r.pool.Exec(ctx,
-		`UPDATE users SET lemonsqueezy_customer_id = $1 WHERE id = $2`,
+		`UPDATE users SET razorpay_customer_id = $1 WHERE id = $2`,
 		customerID, userID,
 	)
 	if err != nil {
-		return fmt.Errorf("updating lemonsqueezy customer id: %w", err)
+		return fmt.Errorf("updating razorpay customer id: %w", err)
 	}
 	return nil
 }
 
-func (r *UserRepo) GetByLemonSqueezyCustomerID(ctx context.Context, customerID string) (*models.User, error) {
+func (r *UserRepo) GetByRazorpayCustomerID(ctx context.Context, customerID string) (*models.User, error) {
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, full_name, plan, lemonsqueezy_customer_id, created_at
-		 FROM users WHERE lemonsqueezy_customer_id = $1`,
+		`SELECT id, email, full_name, plan, razorpay_customer_id, created_at
+		 FROM users WHERE razorpay_customer_id = $1`,
 		customerID,
-	).Scan(&user.ID, &user.Email, &user.FullName, &user.Plan, &user.LemonSqueezyCustomerID, &user.CreatedAt)
+	).Scan(&user.ID, &user.Email, &user.FullName, &user.Plan, &user.RazorpayCustomerID, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("querying user by lemonsqueezy customer id: %w", err)
+		return nil, fmt.Errorf("querying user by razorpay customer id: %w", err)
 	}
 	return user, nil
 }
@@ -111,7 +111,7 @@ func (r *UserRepo) UpdateSubscriptionState(ctx context.Context, userID string, s
 		`UPDATE users SET
 			plan = $2, plan_name = $3, variant_slug = $4,
 			subscription_status = $5, subscription_id = $6, subscription_item_id = $7,
-			lemonsqueezy_customer_id = COALESCE(NULLIF($8,''), lemonsqueezy_customer_id),
+			razorpay_customer_id = COALESCE(NULLIF($8,''), razorpay_customer_id),
 			billing_cycle = $9, current_period_starts_at = $10, current_period_ends_at = $11,
 			cancel_at_period_end = $12, cancelled_at = $13, renews_at = $14,
 			last_payment_status = $15, last_payment_at = $16, coupon_code = $17,
@@ -120,7 +120,7 @@ func (r *UserRepo) UpdateSubscriptionState(ctx context.Context, userID string, s
 		userID,
 		state.Plan, state.PlanName, state.VariantSlug,
 		state.SubscriptionStatus, state.SubscriptionID, state.SubscriptionItemID,
-		state.LemonSqueezyCustomerID,
+		state.RazorpayCustomerID,
 		state.BillingCycle, state.CurrentPeriodStartsAt, state.CurrentPeriodEndsAt,
 		state.CancelAtPeriodEnd, state.CancelledAt, state.RenewsAt,
 		state.LastPaymentStatus, state.LastPaymentAt, state.CouponCode,

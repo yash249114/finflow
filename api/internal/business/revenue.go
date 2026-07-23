@@ -11,17 +11,17 @@ import (
 
 // RevenueMetrics holds revenue and subscription analytics.
 type RevenueMetrics struct {
-	TotalRevenue     float64 `json:"total_revenue"`
-	MRR              float64 `json:"mrr"`
-	ARPU             float64 `json:"arpu"`              // average revenue per user
-	ARPPU            float64 `json:"arppu"`             // average revenue per paying user
-	PayingUsers      int     `json:"paying_users"`
-	FreeUsers        int     `json:"free_users"`
-	ConversionRate   float64 `json:"conversion_rate"`   // free -> pro %
-	UpgradeCount     int     `json:"upgrade_count"`
-	DowngradeCount   int     `json:"downgrade_count"`
-	ChurnCount       int     `json:"churn_count"`
-	RevenueByPlan    map[string]float64 `json:"revenue_by_plan"`
+	TotalRevenue   float64            `json:"total_revenue"`
+	MRR            float64            `json:"mrr"`
+	ARPU           float64            `json:"arpu"`  // average revenue per user
+	ARPPU          float64            `json:"arppu"` // average revenue per paying user
+	PayingUsers    int                `json:"paying_users"`
+	FreeUsers      int                `json:"free_users"`
+	ConversionRate float64            `json:"conversion_rate"` // free -> pro %
+	UpgradeCount   int                `json:"upgrade_count"`
+	DowngradeCount int                `json:"downgrade_count"`
+	ChurnCount     int                `json:"churn_count"`
+	RevenueByPlan  map[string]float64 `json:"revenue_by_plan"`
 }
 
 // RevenueService computes revenue analytics.
@@ -97,15 +97,15 @@ func (s *RevenueService) GetMetrics(ctx context.Context) (*RevenueMetrics, error
 
 // ConversionFunnel tracks the free-to-pro upgrade funnel.
 type ConversionFunnel struct {
-	Period          string  `json:"period"`
-	FreeUsers       int     `json:"free_users"`
-	PromptsShown    int     `json:"prompts_shown"`
-	PromptsClicked  int     `json:"prompts_clicked"`
-	CheckoutsStarted int    `json:"checkouts_started"`
-	CheckoutsCompleted int `json:"checkouts_completed"`
-	ClickRate       float64 `json:"click_rate"`
-	CheckoutRate    float64 `json:"checkout_rate"`
-	ConversionRate  float64 `json:"conversion_rate"`
+	Period             string  `json:"period"`
+	FreeUsers          int     `json:"free_users"`
+	PromptsShown       int     `json:"prompts_shown"`
+	PromptsClicked     int     `json:"prompts_clicked"`
+	CheckoutsStarted   int     `json:"checkouts_started"`
+	CheckoutsCompleted int     `json:"checkouts_completed"`
+	ClickRate          float64 `json:"click_rate"`
+	CheckoutRate       float64 `json:"checkout_rate"`
+	ConversionRate     float64 `json:"conversion_rate"`
 }
 
 // GetConversionFunnel returns the upgrade funnel for a time period.

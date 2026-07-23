@@ -23,17 +23,17 @@ type ForecastAccuracyMetrics struct {
 
 // HorizonAcc is accuracy metrics for a specific forecast horizon.
 type HorizonAcc struct {
-	MAE    float64 `json:"mae"`
-	MAPE   float64 `json:"mape"`
-	Count  int     `json:"count"`
+	MAE   float64 `json:"mae"`
+	MAPE  float64 `json:"mape"`
+	Count int     `json:"count"`
 }
 
 // WeeklyAccuracyTrend tracks accuracy over time.
 type WeeklyAccuracyTrend struct {
-	Week   string  `json:"week"`
-	MAE    float64 `json:"mae"`
-	MAPE   float64 `json:"mape"`
-	Count  int     `json:"count"`
+	Week  string  `json:"week"`
+	MAE   float64 `json:"mae"`
+	MAPE  float64 `json:"mape"`
+	Count int     `json:"count"`
 }
 
 // ForecastAccuracyService tracks forecast model accuracy.
@@ -53,7 +53,7 @@ func (s *ForecastAccuracyService) RecordAccuracy(ctx context.Context, userID str
 		 VALUES ($1, 'forecast', 'accuracy', $2, $3, NOW())`,
 		userID, mae,
 		formatJSON(map[string]interface{}{
-			"horizon_days":        horizonDays,
+			"horizon_days":       horizonDays,
 			"mae":                mae,
 			"mape":               mape,
 			"rmse":               rmse,
@@ -66,8 +66,8 @@ func (s *ForecastAccuracyService) RecordAccuracy(ctx context.Context, userID str
 // GetMetrics returns aggregate forecast accuracy metrics.
 func (s *ForecastAccuracyService) GetMetrics(ctx context.Context, startDate, endDate string) (*ForecastAccuracyMetrics, error) {
 	m := &ForecastAccuracyMetrics{
-		ByHorizon:     make(map[int]HorizonAcc),
-		WeeklyTrend:   []WeeklyAccuracyTrend{},
+		ByHorizon:   make(map[int]HorizonAcc),
+		WeeklyTrend: []WeeklyAccuracyTrend{},
 	}
 
 	rows, err := s.pool.Query(ctx,

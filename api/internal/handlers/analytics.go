@@ -17,17 +17,17 @@ import (
 
 // AnalyticsHandler serves all business intelligence and AIOps endpoints.
 type AnalyticsHandler struct {
-	events         *analytics.EventStore
-	config         *analytics.ConfigStore
-	growth         *business.GrowthService
-	revenue        *business.RevenueService
-	retention      *business.RetentionService
-	forecastAcc    *business.ForecastAccuracyService
-	costTracker    *costing.CostTracker
-	optimizer      *costing.Optimizer
-	experiments    *experiment.Service
-	limits         *limSvc.Service
-	recEngine      *recommendations.Engine
+	events      *analytics.EventStore
+	config      *analytics.ConfigStore
+	growth      *business.GrowthService
+	revenue     *business.RevenueService
+	retention   *business.RetentionService
+	forecastAcc *business.ForecastAccuracyService
+	costTracker *costing.CostTracker
+	optimizer   *costing.Optimizer
+	experiments *experiment.Service
+	limits      *limSvc.Service
+	recEngine   *recommendations.Engine
 }
 
 // NewAnalyticsHandler creates the analytics handler.

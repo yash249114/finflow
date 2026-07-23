@@ -31,15 +31,15 @@ func (h *EntitlementHandler) ListTiers(c *gin.Context) {
 
 // FeatureStatus is the per-user status of a feature.
 type FeatureStatus struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name"`
-	Category    string `json:"category"`
-	Enabled     bool   `json:"enabled"`
-	IsBeta      bool   `json:"is_beta"`
-	CurrentUsage int   `json:"current_usage,omitempty"`
-	Limit       int    `json:"limit,omitempty"`
-	Remaining   int    `json:"remaining,omitempty"`
-	IsUnlimited bool   `json:"is_unlimited,omitempty"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	Category     string `json:"category"`
+	Enabled      bool   `json:"enabled"`
+	IsBeta       bool   `json:"is_beta"`
+	CurrentUsage int    `json:"current_usage,omitempty"`
+	Limit        int    `json:"limit,omitempty"`
+	Remaining    int    `json:"remaining,omitempty"`
+	IsUnlimited  bool   `json:"is_unlimited,omitempty"`
 }
 
 // GetMyEntitlements returns the current user's feature entitlements and usage.

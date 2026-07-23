@@ -2,12 +2,12 @@ package entitlements
 
 // UpgradeRecommendation represents a suggested tier upgrade for a user.
 type UpgradeRecommendation struct {
-	CurrentTier      string          `json:"current_tier"`
-	RecommendedTier  string          `json:"recommended_tier"`
-	FeaturesAtLimit  []FeatureLimit  `json:"features_at_limit,omitempty"`
-	UnlockedFeatures []string        `json:"unlocked_features,omitempty"`
-	UnlockCount      int             `json:"unlock_count"`
-	Urgency          string          `json:"urgency"` // "high", "medium", "low"
+	CurrentTier      string         `json:"current_tier"`
+	RecommendedTier  string         `json:"recommended_tier"`
+	FeaturesAtLimit  []FeatureLimit `json:"features_at_limit,omitempty"`
+	UnlockedFeatures []string       `json:"unlocked_features,omitempty"`
+	UnlockCount      int            `json:"unlock_count"`
+	Urgency          string         `json:"urgency"` // "high", "medium", "low"
 }
 
 // FeatureLimit represents a feature that is approaching or at its usage limit.

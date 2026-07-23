@@ -14,25 +14,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestBillingHandler_Webhook_InvalidSignature(t *testing.T) {
+func TestBillingHandler_RazorpayWebhook_InvalidSignature(t *testing.T) {
 	secret := "test-webhook-secret"
 	billingSvc := &billing.SubscriptionService{}
-	webhookHdlr := billing.NewWebhookHandler(billingSvc, secret)
-	handler := NewBillingHandler(nil, billingSvc, webhookHdlr, "api-key", "store-id", "variant-id", "")
+	rzpHdlr := billing.NewRazorpayWebhookHandler(billingSvc, secret)
+	handler := NewBillingHandler(nil, billingSvc, rzpHdlr, "rzp_key_id", "rzp_key_secret", secret, "")
 
 	w := httptest.NewRecorder()
 	_, r := gin.CreateTestContext(w)
-	r.POST("/api/v1/billing/webhook", handler.Webhook)
+	r.POST("/api/v1/billing/webhook/razorpay", handler.RazorpayWebhook)
 
-	body := `{"meta":{"event_name":"subscription_created","webhook_id":"evt-123","custom_data":{"user_id":"user-1"}},"data":{"id":"sub_123","type":"subscriptions","attributes":{"subscription_id":"sub_123","customer_id":"cust_123","user_email":"test@example.com","status":"active","variant_id":"var_123","billing_cycle":"monthly"}}}`
+	body := `{"event":"payment.captured","payload":{"payment":{"entity":{"id":"pay_123","notes":{"user_id":"user-1","plan":"emerald"}}}}}`
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(body))
 	invalidSig := hex.EncodeToString(mac.Sum(nil)) + "invalid"
 
-	req := httptest.NewRequest("POST", "/api/v1/billing/webhook", bytes.NewBufferString(body))
+	req := httptest.NewRequest("POST", "/api/v1/billing/webhook/razorpay", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Signature", invalidSig)
+	req.Header.Set("X-Razorpay-Signature", invalidSig)
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusUnauthorized {
@@ -46,19 +46,19 @@ func TestBillingHandler_Webhook_InvalidSignature(t *testing.T) {
 	}
 }
 
-func TestBillingHandler_Webhook_EmptySignature(t *testing.T) {
+func TestBillingHandler_RazorpayWebhook_EmptySignature(t *testing.T) {
 	secret := "secret"
 	billingSvc := &billing.SubscriptionService{}
-	webhookHdlr := billing.NewWebhookHandler(billingSvc, secret)
-	handler := NewBillingHandler(nil, billingSvc, webhookHdlr, "api-key", "store-id", "variant-id", "")
+	rzpHdlr := billing.NewRazorpayWebhookHandler(billingSvc, secret)
+	handler := NewBillingHandler(nil, billingSvc, rzpHdlr, "rzp_key_id", "rzp_key_secret", secret, "")
 
 	w := httptest.NewRecorder()
 	_, r := gin.CreateTestContext(w)
-	r.POST("/api/v1/billing/webhook", handler.Webhook)
+	r.POST("/api/v1/billing/webhook/razorpay", handler.RazorpayWebhook)
 
-	req := httptest.NewRequest("POST", "/api/v1/billing/webhook", bytes.NewBufferString(`{}`))
+	req := httptest.NewRequest("POST", "/api/v1/billing/webhook/razorpay", bytes.NewBufferString(`{}`))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Signature", "")
+	req.Header.Set("X-Razorpay-Signature", "")
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusUnauthorized {
@@ -66,11 +66,11 @@ func TestBillingHandler_Webhook_EmptySignature(t *testing.T) {
 	}
 }
 
-func TestBillingHandler_Webhook_InvalidJSON(t *testing.T) {
+func TestBillingHandler_RazorpayWebhook_InvalidJSON(t *testing.T) {
 	secret := "secret"
 	billingSvc := &billing.SubscriptionService{}
-	webhookHdlr := billing.NewWebhookHandler(billingSvc, secret)
-	handler := NewBillingHandler(nil, billingSvc, webhookHdlr, "api-key", "store-id", "variant-id", "")
+	rzpHdlr := billing.NewRazorpayWebhookHandler(billingSvc, secret)
+	handler := NewBillingHandler(nil, billingSvc, rzpHdlr, "rzp_key_id", "rzp_key_secret", secret, "")
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte("not json"))
@@ -78,11 +78,11 @@ func TestBillingHandler_Webhook_InvalidJSON(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	_, r := gin.CreateTestContext(w)
-	r.POST("/api/v1/billing/webhook", handler.Webhook)
+	r.POST("/api/v1/billing/webhook/razorpay", handler.RazorpayWebhook)
 
-	req := httptest.NewRequest("POST", "/api/v1/billing/webhook", bytes.NewBufferString("not json"))
+	req := httptest.NewRequest("POST", "/api/v1/billing/webhook/razorpay", bytes.NewBufferString("not json"))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Signature", sig)
+	req.Header.Set("X-Razorpay-Signature", sig)
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusBadRequest {
@@ -90,42 +90,16 @@ func TestBillingHandler_Webhook_InvalidJSON(t *testing.T) {
 	}
 }
 
-func TestBillingHandler_Webhook_MissingWebhookID(t *testing.T) {
-	secret := "secret"
-	billingSvc := &billing.SubscriptionService{}
-	webhookHdlr := billing.NewWebhookHandler(billingSvc, secret)
-	handler := NewBillingHandler(nil, billingSvc, webhookHdlr, "api-key", "store-id", "variant-id", "")
-
-	body := `{"meta":{"event_name":"subscription_created","webhook_id":"","custom_data":{"user_id":"user-1"}},"data":{"id":"sub_123","type":"subscriptions","attributes":{"subscription_id":"sub_123","customer_id":"cust_123","user_email":"test@example.com","status":"active","variant_id":"var_123","billing_cycle":"monthly"}}}`
-
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(body))
-	sig := hex.EncodeToString(mac.Sum(nil))
-
-	w := httptest.NewRecorder()
-	_, r := gin.CreateTestContext(w)
-	r.POST("/api/v1/billing/webhook", handler.Webhook)
-
-	req := httptest.NewRequest("POST", "/api/v1/billing/webhook", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Signature", sig)
-	r.ServeHTTP(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
 func TestNewBillingHandler(t *testing.T) {
-	h := NewBillingHandler(nil, nil, nil, "ls-api-key", "store-id", "variant-id", "http://localhost:3000")
-	if h.apiKey != "ls-api-key" {
-		t.Errorf("expected ls-api-key, got %s", h.apiKey)
+	h := NewBillingHandler(nil, nil, nil, "rzp-key-id", "rzp-key-secret", "wh-secret", "http://localhost:3000")
+	if h.keyID != "rzp-key-id" {
+		t.Errorf("expected rzp-key-id, got %s", h.keyID)
 	}
-	if h.storeID != "store-id" {
-		t.Errorf("expected store-id, got %s", h.storeID)
+	if h.keySecret != "rzp-key-secret" {
+		t.Errorf("expected rzp-key-secret, got %s", h.keySecret)
 	}
-	if h.variantID != "variant-id" {
-		t.Errorf("expected variant-id, got %s", h.variantID)
+	if h.webhookSecret != "wh-secret" {
+		t.Errorf("expected wh-secret, got %s", h.webhookSecret)
 	}
 	if h.frontendURL != "http://localhost:3000" {
 		t.Errorf("expected http://localhost:3000, got %s", h.frontendURL)

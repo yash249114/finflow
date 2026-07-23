@@ -13,15 +13,15 @@ import (
 
 // Experiment is an A/B test configuration.
 type Experiment struct {
-	ID            string          `json:"id"`
-	Name          string          `json:"name"`
-	Description   string          `json:"description"`
-	Status        string          `json:"status"` // draft | running | paused | completed
-	Variants      []Variant       `json:"variants"`
-	TargetFeature string          `json:"target_feature"`
-	CreatedAt     time.Time       `json:"created_at"`
-	StartedAt     *time.Time      `json:"started_at,omitempty"`
-	EndedAt       *time.Time      `json:"ended_at,omitempty"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	Status        string     `json:"status"` // draft | running | paused | completed
+	Variants      []Variant  `json:"variants"`
+	TargetFeature string     `json:"target_feature"`
+	CreatedAt     time.Time  `json:"created_at"`
+	StartedAt     *time.Time `json:"started_at,omitempty"`
+	EndedAt       *time.Time `json:"ended_at,omitempty"`
 }
 
 // Variant is one branch of an experiment.
@@ -148,21 +148,21 @@ func (s *Service) RecordEvent(ctx context.Context, experimentID, userID, variant
 
 // VariantMetrics holds aggregated metrics for one variant.
 type VariantMetrics struct {
-	Variant       string             `json:"variant"`
-	UserCount     int                `json:"user_count"`
-	EventCount    int                `json:"event_count"`
-	Metrics       map[string]float64 `json:"metrics"` // metric_name -> avg value
-	ConversionRate float64           `json:"conversion_rate"`
+	Variant        string             `json:"variant"`
+	UserCount      int                `json:"user_count"`
+	EventCount     int                `json:"event_count"`
+	Metrics        map[string]float64 `json:"metrics"` // metric_name -> avg value
+	ConversionRate float64            `json:"conversion_rate"`
 }
 
 // ExperimentResults holds the analysis of an experiment.
 type ExperimentResults struct {
-	ExperimentID string          `json:"experiment_id"`
-	Status       string          `json:"status"`
+	ExperimentID string           `json:"experiment_id"`
+	Status       string           `json:"status"`
 	Variants     []VariantMetrics `json:"variants"`
-	Winner       string          `json:"winner,omitempty"`
-	Confidence   float64         `json:"confidence"`
-	Significant  bool            `json:"significant"`
+	Winner       string           `json:"winner,omitempty"`
+	Confidence   float64          `json:"confidence"`
+	Significant  bool             `json:"significant"`
 }
 
 // GetResults computes the results for an experiment.

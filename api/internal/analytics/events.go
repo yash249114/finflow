@@ -14,21 +14,21 @@ import (
 type EventType string
 
 const (
-	EventUsage       EventType = "usage"
-	EventAccuracy    EventType = "accuracy"
-	EventCost        EventType = "cost"
-	EventError       EventType = "error"
+	EventUsage        EventType = "usage"
+	EventAccuracy     EventType = "accuracy"
+	EventCost         EventType = "cost"
+	EventError        EventType = "error"
 	EventSatisfaction EventType = "satisfaction"
-	EventLimitHit    EventType = "limit_hit"
+	EventLimitHit     EventType = "limit_hit"
 )
 
 // FeatureEvent is a single observability signal for an AI feature.
 type FeatureEvent struct {
 	ID        string          `json:"id"`
 	UserID    string          `json:"user_id"`
-	Feature   string          `json:"feature"`    // classify | forecast | ai_chat | recommendations | upload
+	Feature   string          `json:"feature"` // classify | forecast | ai_chat | recommendations | upload
 	EventType EventType       `json:"event_type"`
-	Value     float64         `json:"value"`      // latency_ms, cost_usd, accuracy_score, rating
+	Value     float64         `json:"value"` // latency_ms, cost_usd, accuracy_score, rating
 	Metadata  json.RawMessage `json:"metadata"`
 	CreatedAt time.Time       `json:"created_at"`
 }
@@ -79,13 +79,13 @@ func (s *EventStore) Track(ctx context.Context, e FeatureEvent) {
 
 // FeatureUsageSummary is aggregated usage for a feature.
 type FeatureUsageSummary struct {
-	Feature      string  `json:"feature"`
-	TotalEvents  int     `json:"total_events"`
-	UniqueUsers  int     `json:"unique_users"`
-	TotalValue   float64 `json:"total_value"`
-	AvgValue     float64 `json:"avg_value"`
-	ErrorCount   int     `json:"error_count"`
-	ErrorRate    float64 `json:"error_rate"`
+	Feature     string  `json:"feature"`
+	TotalEvents int     `json:"total_events"`
+	UniqueUsers int     `json:"unique_users"`
+	TotalValue  float64 `json:"total_value"`
+	AvgValue    float64 `json:"avg_value"`
+	ErrorCount  int     `json:"error_count"`
+	ErrorRate   float64 `json:"error_rate"`
 }
 
 // GetFeatureUsage returns aggregated usage for a feature in a time range.

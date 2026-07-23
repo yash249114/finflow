@@ -14,15 +14,15 @@ import (
 
 // LimitResult is the outcome of a limit check.
 type LimitResult struct {
-	Allowed   bool    `json:"allowed"`
-	Current   int     `json:"current"`
-	HardLimit int     `json:"hard_limit"` // -1 = unlimited
-	SoftLimit int     `json:"soft_limit"` // -1 = unlimited
-	UsagePct  float64 `json:"usage_pct"`
-	NearLimit bool    `json:"near_limit"` // within warn_at_pct
-	Blocked   bool    `json:"blocked"`    // true only when hard limit exceeded AND upgrade prompt shown
-	Message   string  `json:"message,omitempty"`
-	UpgradeURL string `json:"upgrade_url,omitempty"`
+	Allowed    bool    `json:"allowed"`
+	Current    int     `json:"current"`
+	HardLimit  int     `json:"hard_limit"` // -1 = unlimited
+	SoftLimit  int     `json:"soft_limit"` // -1 = unlimited
+	UsagePct   float64 `json:"usage_pct"`
+	NearLimit  bool    `json:"near_limit"` // within warn_at_pct
+	Blocked    bool    `json:"blocked"`    // true only when hard limit exceeded AND upgrade prompt shown
+	Message    string  `json:"message,omitempty"`
+	UpgradeURL string  `json:"upgrade_url,omitempty"`
 }
 
 // Service enforces configurable plan limits with soft warnings and hard caps.
@@ -68,9 +68,9 @@ func (s *Service) CheckFeatureAccess(ctx context.Context, featureName, plan stri
 	}
 	if !enabled {
 		return &LimitResult{
-			Allowed:   false,
-			Blocked:   true,
-			Message:   fmt.Sprintf("%s is currently disabled.", featureName),
+			Allowed:    false,
+			Blocked:    true,
+			Message:    fmt.Sprintf("%s is currently disabled.", featureName),
 			UpgradeURL: "/settings/billing",
 		}, nil
 	}
@@ -185,13 +185,13 @@ func (s *Service) emitUpgradeNudge(ctx context.Context, userID, feature string, 
 	}
 
 	nudge := map[string]interface{}{
-		"type":         "upgrade_nudge",
-		"user_id":      userID,
-		"feature":      feature,
-		"current":      current,
-		"limit":        limit,
-		"urgency":      "soft", // never aggressive
-		"created_at":   time.Now().UTC().Format(time.RFC3339),
+		"type":       "upgrade_nudge",
+		"user_id":    userID,
+		"feature":    feature,
+		"current":    current,
+		"limit":      limit,
+		"urgency":    "soft", // never aggressive
+		"created_at": time.Now().UTC().Format(time.RFC3339),
 	}
 	payload, _ := json.Marshal(nudge)
 

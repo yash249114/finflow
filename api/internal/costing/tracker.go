@@ -12,17 +12,17 @@ import (
 
 // CostRecord is a single cost event for an API/LLM call.
 type CostRecord struct {
-	ID           string  `json:"id"`
-	UserID       string  `json:"user_id"`
-	Service      string  `json:"service"`       // openai | anthropic | gemini | ml-local
-	Operation    string  `json:"operation"`     // classify | forecast | chat | embeddings
-	Model        string  `json:"model"`         // gpt-4o-mini | claude-3-5-haiku etc.
-	InputTokens  int     `json:"input_tokens"`
-	OutputTokens int     `json:"output_tokens"`
-	CostUSD      float64 `json:"cost_usd"`
-	LatencyMs    float64 `json:"latency_ms"`
-	Status       string  `json:"status"`
-	Plan         string  `json:"plan"`
+	ID           string    `json:"id"`
+	UserID       string    `json:"user_id"`
+	Service      string    `json:"service"`   // openai | anthropic | gemini | ml-local
+	Operation    string    `json:"operation"` // classify | forecast | chat | embeddings
+	Model        string    `json:"model"`     // gpt-4o-mini | claude-3-5-haiku etc.
+	InputTokens  int       `json:"input_tokens"`
+	OutputTokens int       `json:"output_tokens"`
+	CostUSD      float64   `json:"cost_usd"`
+	LatencyMs    float64   `json:"latency_ms"`
+	Status       string    `json:"status"`
+	Plan         string    `json:"plan"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

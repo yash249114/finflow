@@ -1,4 +1,4 @@
-﻿// api/internal/handlers/billing.go
+// api/internal/handlers/billing.go
 package handlers
 
 import (
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/finflow/api/internal/billing"
@@ -17,29 +16,29 @@ import (
 )
 
 type BillingHandler struct {
-	userRepo    *db.UserRepo
-	billingSvc  *billing.SubscriptionService
-	webhookHdlr *billing.WebhookHandler
-	apiKey      string
-	storeID     string
-	variantID   string
-	frontendURL string
+	userRepo       *db.UserRepo
+	billingSvc     *billing.SubscriptionService
+	rzpWebhookHdlr *billing.RazorpayWebhookHandler
+	keyID          string
+	keySecret      string
+	webhookSecret  string
+	frontendURL    string
 }
 
 func NewBillingHandler(
 	userRepo *db.UserRepo,
 	billingSvc *billing.SubscriptionService,
-	webhookHdlr *billing.WebhookHandler,
-	apiKey, storeID, variantID, frontendURL string,
+	rzpWebhookHdlr *billing.RazorpayWebhookHandler,
+	keyID, keySecret, webhookSecret, frontendURL string,
 ) *BillingHandler {
 	return &BillingHandler{
-		userRepo:    userRepo,
-		billingSvc:  billingSvc,
-		webhookHdlr: webhookHdlr,
-		apiKey:      apiKey,
-		storeID:     storeID,
-		variantID:   variantID,
-		frontendURL: frontendURL,
+		userRepo:       userRepo,
+		billingSvc:     billingSvc,
+		rzpWebhookHdlr: rzpWebhookHdlr,
+		keyID:          keyID,
+		keySecret:      keySecret,
+		webhookSecret:  webhookSecret,
+		frontendURL:    frontendURL,
 	}
 }
 
@@ -60,7 +59,7 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 		req.BillingCycle = "monthly"
 	}
 
-	variantID := h.resolveVariantID(req.Plan, req.BillingCycle)
+	plan, interval := h.parsePlan(req.Plan, req.BillingCycle)
 
 	frontendURL := h.frontendURL
 	if frontendURL == "" {
@@ -71,57 +70,39 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 		redirectURL = req.CheckoutURL
 	}
 
-	payload := map[string]interface{}{
-		"data": map[string]interface{}{
-			"type": "checkouts",
-			"attributes": map[string]interface{}{
-				"checkout_data": map[string]interface{}{
-					"email": emailStr,
-					"custom": map[string]string{
-						"user_id": userID,
-					},
-				},
-				"product_options": map[string]interface{}{
-					"redirect_url": redirectURL,
-				},
-			},
-			"relationships": map[string]interface{}{
-				"store": map[string]interface{}{
-					"data": map[string]interface{}{
-						"type": "stores",
-						"id":   h.storeID,
-					},
-				},
-				"variant": map[string]interface{}{
-					"data": map[string]interface{}{
-						"type": "variants",
-						"id":   variantID,
-					},
-				},
-			},
+	// Create Razorpay order for subscription
+	orderPayload := map[string]interface{}{
+		"amount":          plan.PricePaise,
+		"currency":        plan.Currency,
+		"receipt":         fmt.Sprintf("rcpt_%s_%d", userID, time.Now().Unix()),
+		"partial_payment": false,
+		"notes": map[string]string{
+			"user_id":  userID,
+			"plan":     plan.VariantSlug,
+			"interval": interval,
 		},
 	}
 
-	bodyBytes, err := json.Marshal(payload)
+	bodyBytes, err := json.Marshal(orderPayload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	reqHTTP, err := http.NewRequestWithContext(c.Request.Context(), "POST", "https://api.lemonsqueezy.com/v1/checkouts", bytes.NewReader(bodyBytes))
+	// Create Razorpay order
+	reqHTTP, err := http.NewRequestWithContext(c.Request.Context(), "POST", "https://api.razorpay.com/v1/orders", bytes.NewReader(bodyBytes))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	reqHTTP.Header.Set("Authorization", "Bearer "+h.apiKey)
-	reqHTTP.Header.Set("Content-Type", "application/vnd.api+json")
-	reqHTTP.Header.Set("Accept", "application/vnd.api+json")
+	reqHTTP.SetBasicAuth(h.keyID, h.keySecret)
+	reqHTTP.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(reqHTTP)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("checkout request failed")
+		log.Error().Err(err).Str("user_id", userID).Msg("razorpay order request failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to contact billing provider"})
 		return
 	}
@@ -134,24 +115,41 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("lemon squeezy error")
+		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("razorpay order error")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing provider returned an error"})
 		return
 	}
 
-	var resData struct {
-		Data struct {
-			Attributes struct {
-				URL string `json:"url"`
-			} `json:"attributes"`
-		} `json:"data"`
+	var orderResp struct {
+		ID       string `json:"id"`
+		Amount   int    `json:"amount"`
+		Currency string `json:"currency"`
+		Receipt  string `json:"receipt"`
 	}
-	if err := json.Unmarshal(respBody, &resData); err != nil {
+	if err := json.Unmarshal(respBody, &orderResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"checkout_url": resData.Data.Attributes.URL})
+	// Store order ID for webhook reconciliation
+	if err := h.billingSvc.RecordOrder(c.Request.Context(), userID, orderResp.ID, plan.VariantSlug, fmt.Sprintf("%d", plan.PricePaise)); err != nil {
+		log.Error().Err(err).Str("order_id", orderResp.ID).Msg("failed to record order")
+	}
+
+	// Return checkout URL with order details for Razorpay Checkout
+	checkoutURL := fmt.Sprintf("%s?order_id=%s&key_id=%s&amount=%d&currency=%s&name=%s&description=%s&prefill[email]=%s&theme[color]=%s",
+		redirectURL,
+		orderResp.ID,
+		h.keyID,
+		plan.PricePaise,
+		plan.Currency,
+		"FinFlow",
+		fmt.Sprintf("%s - %s", plan.Name, interval),
+		emailStr,
+		"#4F46E5",
+	)
+
+	c.JSON(http.StatusOK, gin.H{"checkout_url": checkoutURL, "order_id": orderResp.ID})
 }
 
 func (h *BillingHandler) CreatePortal(c *gin.Context) {
@@ -163,71 +161,20 @@ func (h *BillingHandler) CreatePortal(c *gin.Context) {
 		return
 	}
 
-	if user.LemonSqueezyCustomerID == nil || *user.LemonSqueezyCustomerID == "" {
+	// Razorpay doesn't have a customer portal like LemonSqueezy
+	// Users manage subscriptions via dashboard or we redirect to Razorpay's manage page
+	if user.RazorpayCustomerID == nil || *user.RazorpayCustomerID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no active subscription found"})
 		return
 	}
 
-	filterURL := fmt.Sprintf("https://api.lemonsqueezy.com/v1/customers?filter[email]=%s", url.QueryEscape(user.Email))
-	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", filterURL, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	req.Header.Set("Authorization", "Bearer "+h.apiKey)
-	req.Header.Set("Accept", "application/vnd.api+json")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to contact billing provider"})
-		return
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Error().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("lemon squeezy customer query error")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing provider returned an error"})
-		return
-	}
-
-	var resData struct {
-		Data []struct {
-			Attributes struct {
-				Urls struct {
-					CustomerPortal string `json:"customer_portal"`
-				} `json:"urls"`
-			} `json:"attributes"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(respBody, &resData); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	if len(resData.Data) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "customer record not found in billing provider"})
-		return
-	}
-
-	portalURL := resData.Data[0].Attributes.Urls.CustomerPortal
-	if portalURL == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "customer portal URL is not available"})
-		return
-	}
-
+	// Redirect to Razorpay subscription management (or our own billing page)
+	portalURL := fmt.Sprintf("%s/settings/billing?customer_id=%s", h.frontendURL, *user.RazorpayCustomerID)
 	c.JSON(http.StatusOK, gin.H{"portal_url": portalURL})
 }
 
-func (h *BillingHandler) Webhook(c *gin.Context) {
-	h.webhookHdlr.HandleWebhook(c)
+func (h *BillingHandler) RazorpayWebhook(c *gin.Context) {
+	h.rzpWebhookHdlr.HandleWebhook(c)
 }
 
 func (h *BillingHandler) GetSubscription(c *gin.Context) {
@@ -338,55 +285,76 @@ func (h *BillingHandler) CancelSubscription(c *gin.Context) {
 	}
 }
 
-func (h *BillingHandler) resolveVariantID(plan, cycle string) string {
-	if h.variantID != "" {
-		return h.variantID
+func (h *BillingHandler) parsePlan(plan, cycle string) (Plan, string) {
+	plans := map[string]Plan{
+		"emerald":        {VariantSlug: "emerald", Name: "Emerald", Tier: "pro", PricePaise: 99900, Currency: "INR"},
+		"emerald_yearly": {VariantSlug: "emerald", Name: "Emerald", Tier: "pro", PricePaise: 999000, Currency: "INR"},
+		"diamond":        {VariantSlug: "diamond", Name: "Diamond", Tier: "max", PricePaise: 249900, Currency: "INR"},
+		"diamond_yearly": {VariantSlug: "diamond", Name: "Diamond", Tier: "max", PricePaise: 2499000, Currency: "INR"},
 	}
-	return plan
+
+	if p, ok := plans[plan]; ok {
+		interval := "month"
+		if cycle == "yearly" || plan == "emerald_yearly" || plan == "diamond_yearly" {
+			interval = "year"
+		}
+		return p, interval
+	}
+
+	// Default to emerald monthly
+	return plans["emerald"], "month"
+}
+
+type Plan struct {
+	VariantSlug string
+	Name        string
+	Tier        string
+	PricePaise  int
+	Currency    string
 }
 
 // ListPlans returns available subscription plans.
 func (h *BillingHandler) ListPlans(c *gin.Context) {
 	plans := []gin.H{
 		{
-			"id":         "emerald_monthly",
-			"name":       "Emerald",
-			"slug":       "emerald",
-			"tier":       "pro",
-			"price":      9.99,
-			"currency":   "USD",
-			"interval":   "month",
-			"features":   []string{"Cash flow forecasting", "Fraud detection", "AI recommendations", "1000 transactions/mo"},
+			"id":       "emerald",
+			"name":     "Emerald",
+			"slug":     "emerald",
+			"tier":     "pro",
+			"price":    999,
+			"currency": "INR",
+			"interval": "month",
+			"features": []string{"Cash flow forecasting", "Fraud detection", "AI recommendations", "1000 transactions/mo"},
 		},
 		{
-			"id":         "emerald_yearly",
-			"name":       "Emerald Annual",
-			"slug":       "emerald",
-			"tier":       "pro",
-			"price":      99.99,
-			"currency":   "USD",
-			"interval":   "year",
-			"features":   []string{"Everything in Emerald Monthly", "2 months free"},
+			"id":       "emerald",
+			"name":     "Emerald Annual",
+			"slug":     "emerald",
+			"tier":     "pro",
+			"price":    9990,
+			"currency": "INR",
+			"interval": "year",
+			"features": []string{"Everything in Emerald Monthly", "2 months free"},
 		},
 		{
-			"id":         "diamond_monthly",
-			"name":       "Diamond",
-			"slug":       "diamond",
-			"tier":       "max",
-			"price":      24.99,
-			"currency":   "USD",
-			"interval":   "month",
-			"features":   []string{"All Emerald features", "Unlimited transactions", "Priority support", "Custom AI models"},
+			"id":       "diamond",
+			"name":     "Diamond",
+			"slug":     "diamond",
+			"tier":     "max",
+			"price":    2499,
+			"currency": "INR",
+			"interval": "month",
+			"features": []string{"All Emerald features", "Unlimited transactions", "Priority support", "Custom AI models"},
 		},
 		{
-			"id":         "diamond_yearly",
-			"name":       "Diamond Annual",
-			"slug":       "diamond",
-			"tier":       "max",
-			"price":      249.99,
-			"currency":   "USD",
-			"interval":   "year",
-			"features":   []string{"Everything in Diamond Monthly", "2 months free"},
+			"id":       "diamond",
+			"name":     "Diamond Annual",
+			"slug":     "diamond",
+			"tier":     "max",
+			"price":    24990,
+			"currency": "INR",
+			"interval": "year",
+			"features": []string{"Everything in Diamond Monthly", "2 months free"},
 		},
 	}
 	c.JSON(http.StatusOK, gin.H{"plans": plans})

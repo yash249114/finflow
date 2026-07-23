@@ -9,13 +9,13 @@ import (
 
 // ModelSuggestion is a cost optimization recommendation for LLM routing.
 type ModelSuggestion struct {
-	CurrentModel  string  `json:"current_model"`
-	SuggestedModel string `json:"suggested_model"`
-	CurrentCost   float64 `json:"current_cost_per_1k"`
-	SuggestedCost float64 `json:"suggested_cost_per_1k"`
-	SavingsPct    float64 `json:"savings_pct"`
-	QualityImpact string  `json:"quality_impact"` // minimal | moderate | significant
-	Reason        string  `json:"reason"`
+	CurrentModel   string  `json:"current_model"`
+	SuggestedModel string  `json:"suggested_model"`
+	CurrentCost    float64 `json:"current_cost_per_1k"`
+	SuggestedCost  float64 `json:"suggested_cost_per_1k"`
+	SavingsPct     float64 `json:"savings_pct"`
+	QualityImpact  string  `json:"quality_impact"` // minimal | moderate | significant
+	Reason         string  `json:"reason"`
 }
 
 // Optimizer analyzes cost patterns and suggests model switches.

@@ -122,21 +122,21 @@ func main() {
 	growthService := business.NewGrowthService(pool)
 	revenueService := business.NewRevenueService(pool)
 	retentionService := business.NewRetentionService(pool)
-forecastAccService := business.NewForecastAccuracyService(pool)
+	forecastAccService := business.NewForecastAccuracyService(pool)
 	costTracker := costing.NewCostTracker(pool, rdb)
 	costOptimizer := costing.NewOptimizer(configStore)
 	experimentService := experiment.NewService(pool)
 	limitService := limSvc.NewService(pool, rdb, configStore, eventStore)
 	recEngine := recommendations.NewEngine(pool, configStore)
 	billingSvc := billing.NewSubscriptionService(pool)
-	webhookHdlr := billing.NewWebhookHandler(billingSvc, cfg.LemonSqueezyWebhookSecret)
+	rzpWebhookHdlr := billing.NewRazorpayWebhookHandler(billingSvc, cfg.RazorpayWebhookSecret)
 
 	// ── Handlers ─────────────────────────────────────────
 	authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, cfg.AppEnv)
 	uploadHandler := handlers.NewUploadHandler(txRepo, userRepo, mlClient, rdb)
 	txHandler := handlers.NewTransactionHandler(txRepo)
 	forecastHandler := handlers.NewForecastHandler(txRepo, mlClient, rdb)
-	billingHandler := handlers.NewBillingHandler(userRepo, billingSvc, webhookHdlr, cfg.LemonSqueezyAPIKey, cfg.LemonSqueezyStoreID, cfg.LemonSqueezyVariantID, cfg.FrontendURL)
+	billingHandler := handlers.NewBillingHandler(userRepo, billingSvc, rzpWebhookHdlr, cfg.RazorpayKeyID, cfg.RazorpayKeySecret, cfg.RazorpayWebhookSecret, cfg.FrontendURL)
 	aiChatHandler := handlers.NewAIChatHandler(copilot, alerter)
 	recommendationsHandler := handlers.NewRecommendationsHandler(txRepo)
 	entitlementHandler := handlers.NewEntitlementHandler(entEngine)
@@ -181,13 +181,13 @@ forecastAccService := business.NewForecastAccuracyService(pool)
 		auth.POST("/logout", authHandler.Logout)
 	}
 
-	// ── Billing (LemonSqueezy) ─────────────────────────────
+	// ── Billing (Razorpay) ─────────────────────────────
 	// Public endpoints (no auth)
 	r.GET("/api/v1/billing/plans", billingHandler.ListPlans)
 
-	// Webhook (no JWT — verified by LemonSqueezy signature)
+	// Webhook (no JWT — verified by Razorpay signature)
 	if cfg.BillingEnabled() {
-		r.POST("/api/v1/billing/webhook", billingHandler.Webhook)
+		r.POST("/api/v1/billing/webhook/razorpay", billingHandler.RazorpayWebhook)
 	}
 
 	// ── AIOps self-monitoring (rate-limited, no auth required) ─
@@ -223,7 +223,7 @@ forecastAccService := business.NewForecastAccuracyService(pool)
 		protected.GET("/transactions", txHandler.List)
 		protected.GET("/transactions/summary", txHandler.Summary)
 
-		// Billing (LemonSqueezy)
+		// Billing (Razorpay)
 		if cfg.BillingEnabled() {
 			protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
 			protected.POST("/billing/portal", billingHandler.CreatePortal)
@@ -515,16 +515,16 @@ func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Cli
 			}
 		}
 
-		// Billing (LemonSqueezy)
-		if cfg.LemonSqueezyAPIKey != "" {
-			components["billing"] = "configured"
+		// Billing (Razorpay)
+		if cfg.RazorpayKeyID != "" {
+			components["billing"] = "ok"
 		} else {
 			components["billing"] = "not_configured"
 		}
 
-		// Email (SMTP / Resend)
-		if cfg.SMTPHost != "" {
-			components["email"] = "configured"
+		// Email (Resend)
+		if cfg.ResendAPIKey != "" && cfg.EmailFrom != "" {
+			components["email"] = "ok"
 		} else {
 			components["email"] = "not_configured"
 		}
@@ -546,9 +546,9 @@ func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Cli
 			components["llm"] = "not_configured"
 		}
 
-		// reCAPTCHA
+		// reCAPTCHA (verified in frontend /api/verify-captcha)
 		if cfg.RecaptchaSecretKey != "" {
-			components["captcha"] = "configured"
+			components["captcha"] = "ok"
 		} else {
 			components["captcha"] = "not_configured"
 		}

@@ -10,9 +10,9 @@ import (
 
 // CohortRow is one row in a retention cohort table.
 type CohortRow struct {
-	CohortWeek  string    `json:"cohort_week"`  // week starting date
-	UserCount   int       `json:"user_count"`   // users in cohort
-	Retention   []float64 `json:"retention"`     // % retained at week 0,1,2,...
+	CohortWeek string    `json:"cohort_week"` // week starting date
+	UserCount  int       `json:"user_count"`  // users in cohort
+	Retention  []float64 `json:"retention"`   // % retained at week 0,1,2,...
 }
 
 // RetentionService computes retention cohorts and churn analysis.
@@ -96,11 +96,11 @@ func (s *RetentionService) GetRetentionCohorts(ctx context.Context, weeks int) (
 
 // ChurnMetrics holds churn analytics.
 type ChurnMetrics struct {
-	ChurnRate30Day  float64            `json:"churn_rate_30_day"`
-	ChurnRate7Day   float64            `json:"churn_rate_7_day"`
-	AtRiskUsers     int                `json:"at_risk_users"`
-	ChurnedByPlan   map[string]int     `json:"churned_by_plan"`
-	ChurnReasons    []ChurnReason      `json:"churn_reasons"`
+	ChurnRate30Day float64        `json:"churn_rate_30_day"`
+	ChurnRate7Day  float64        `json:"churn_rate_7_day"`
+	AtRiskUsers    int            `json:"at_risk_users"`
+	ChurnedByPlan  map[string]int `json:"churned_by_plan"`
+	ChurnReasons   []ChurnReason  `json:"churn_reasons"`
 }
 
 // ChurnReason is a categorized churn cause.
@@ -193,11 +193,11 @@ func (s *RetentionService) GetChurnMetrics(ctx context.Context) (*ChurnMetrics, 
 
 // FeatureAdoption tracks feature adoption rates.
 type FeatureAdoption struct {
-	Feature         string  `json:"feature"`
-	TotalUsers      int     `json:"total_users"`
-	AdoptedUsers    int     `json:"adopted_users"`
-	AdoptionRate    float64 `json:"adoption_rate"`
-	WeeklyGrowth    float64 `json:"weekly_growth"`
+	Feature      string  `json:"feature"`
+	TotalUsers   int     `json:"total_users"`
+	AdoptedUsers int     `json:"adopted_users"`
+	AdoptionRate float64 `json:"adoption_rate"`
+	WeeklyGrowth float64 `json:"weekly_growth"`
 }
 
 // GetFeatureAdoption returns adoption rates for all features.

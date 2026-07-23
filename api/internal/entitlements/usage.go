@@ -21,8 +21,8 @@ type UsageRecord struct {
 
 // UsageStatus is the current usage status for a user+feature.
 type UsageStatus struct {
-	FeatureName      string `json:"feature_name"`
-	CurrentUsage     int    `json:"current_usage"`
+	FeatureName     string `json:"feature_name"`
+	CurrentUsage    int    `json:"current_usage"`
 	LimitValue      int    `json:"limit_value"`
 	Remaining       int    `json:"remaining"`
 	RefreshInterval string `json:"refresh_interval"`
