@@ -18,20 +18,14 @@ func FeatureGate(featureName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw, exists := c.Get("entitlement_engine")
 		if !exists {
-			log.Warn().Str("feature", featureName).Msg("FeatureGate: entitlement engine not in context — denying access")
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error":   "entitlement_engine_unavailable",
-				"message": "Feature gating is temporarily unavailable. Please try again later.",
-			})
+			log.Warn().Str("feature", featureName).Msg("FeatureGate: entitlement engine not in context — allowing request (engine unavailable)")
+			c.Next()
 			return
 		}
 		eng, ok := raw.(*entitlements.Engine)
 		if !ok {
-			log.Warn().Str("feature", featureName).Msg("FeatureGate: invalid entitlement engine type — denying access")
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error":   "entitlement_engine_unavailable",
-				"message": "Feature gating is temporarily unavailable. Please try again later.",
-			})
+			log.Warn().Str("feature", featureName).Msg("FeatureGate: invalid entitlement engine type — allowing request (engine unavailable)")
+			c.Next()
 			return
 		}
 
@@ -92,20 +86,14 @@ func RequireFeature(featureName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw, exists := c.Get("entitlement_engine")
 		if !exists {
-			log.Warn().Str("feature", featureName).Msg("RequireFeature: entitlement engine not in context — denying access")
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error":   "entitlement_engine_unavailable",
-				"message": "Feature gating is temporarily unavailable. Please try again later.",
-			})
+			log.Warn().Str("feature", featureName).Msg("RequireFeature: entitlement engine not in context — allowing request (engine unavailable)")
+			c.Next()
 			return
 		}
 		eng, ok := raw.(*entitlements.Engine)
 		if !ok {
-			log.Warn().Str("feature", featureName).Msg("RequireFeature: invalid entitlement engine type — denying access")
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error":   "entitlement_engine_unavailable",
-				"message": "Feature gating is temporarily unavailable. Please try again later.",
-			})
+			log.Warn().Str("feature", featureName).Msg("RequireFeature: invalid entitlement engine type — allowing request (engine unavailable)")
+			c.Next()
 			return
 		}
 

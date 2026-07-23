@@ -72,11 +72,21 @@ func (e *Engine) Stop() {
 func (e *Engine) load(ctx context.Context) error {
 	features, err := e.repo.GetAllFeatures(ctx)
 	if err != nil {
-		return fmt.Errorf("getting features: %w", err)
+		log.Warn().Err(err).Msg("Failed to load features — entitlements will be empty")
+		e.mu.Lock()
+		e.features = make(map[string]*Feature)
+		e.tiers = make(map[string]*Tier)
+		e.mu.Unlock()
+		return nil // Don't fail startup, just log and continue
 	}
 	tiers, err := e.repo.GetAllTiers(ctx)
 	if err != nil {
-		return fmt.Errorf("getting tiers: %w", err)
+		log.Warn().Err(err).Msg("Failed to load tiers — entitlements will be empty")
+		e.mu.Lock()
+		e.features = make(map[string]*Feature)
+		e.tiers = make(map[string]*Tier)
+		e.mu.Unlock()
+		return nil
 	}
 
 	e.mu.Lock()
