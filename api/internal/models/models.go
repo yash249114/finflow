@@ -6,12 +6,29 @@ import "time"
 // ─── Users ────────────────────────────────────────────────
 
 type User struct {
-	ID                     string    `json:"id"`
-	Email                  string    `json:"email"`
-	FullName               string    `json:"full_name"`
-	Plan                   string    `json:"plan"`
-	RazorpayCustomerID *string   `json:"razorpay_customer_id,omitempty"`
-	CreatedAt              time.Time `json:"created_at"`
+	ID                     string     `json:"id"`
+	Email                  string     `json:"email"`
+	FullName               string     `json:"full_name"`
+	Plan                   string     `json:"plan"`
+	LemonSqueezyCustomerID *string    `json:"lemonsqueezy_customer_id,omitempty"`
+	SubscriptionStatus     *string    `json:"subscription_status,omitempty"`
+	SubscriptionID         *string    `json:"subscription_id,omitempty"`
+	SubscriptionItemID     *string    `json:"subscription_item_id,omitempty"`
+	VariantID              *string    `json:"variant_id,omitempty"`
+	BillingCycle           *string    `json:"billing_cycle,omitempty"`
+	PlanName               *string    `json:"plan_name,omitempty"`
+	TrialStartsAt          *time.Time `json:"trial_starts_at,omitempty"`
+	TrialEndsAt            *time.Time `json:"trial_ends_at,omitempty"`
+	CurrentPeriodStartsAt  *time.Time `json:"current_period_starts_at,omitempty"`
+	CurrentPeriodEndsAt    *time.Time `json:"current_period_ends_at,omitempty"`
+	CancelAtPeriodEnd      *bool      `json:"cancel_at_period_end,omitempty"`
+	CancelledAt            *time.Time `json:"cancelled_at,omitempty"`
+	RenewsAt               *time.Time `json:"renews_at,omitempty"`
+	LastPaymentStatus      *string    `json:"last_payment_status,omitempty"`
+	LastPaymentAt          *time.Time `json:"last_payment_at,omitempty"`
+	CouponCode             *string    `json:"coupon_code,omitempty"`
+	VariantSlug            *string    `json:"variant_slug,omitempty"`
+	CreatedAt              time.Time  `json:"created_at"`
 }
 
 type RegisterRequest struct {

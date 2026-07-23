@@ -13,6 +13,8 @@ import BackButton from "@/components/ui/back-button";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 
+const IS_LOGIN_PAGE = true;
+
 interface ReCaptchaInstance {
   ready: (callback: () => void) => void;
   render: (containerId: string, options: {
@@ -216,7 +218,7 @@ function AuthFormLayout({ children }: { children: React.ReactNode }) {
 
         <div className="max-w-md space-y-8 z-10">
           <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            {document.title.includes("Login") ? '"Cash flow intelligence for the modern business"' : '"Join businesses already forecasting smarter"'}
+            {IS_LOGIN_PAGE ? '"Cash flow intelligence for the modern business"' : '"Join businesses already forecasting smarter"'}
           </h1>
 
           <ul className="space-y-4">

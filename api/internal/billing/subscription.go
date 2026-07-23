@@ -111,7 +111,7 @@ func (s *SubscriptionService) GetState(ctx context.Context, userID string) (*Sub
 	return st, nil
 }
 
-// GetBySubscriptionID returns the user ID for a Razorpay subscription ID.
+// GetBySubscriptionID returns the user ID for a LemonSqueezy subscription ID.
 func (s *SubscriptionService) GetBySubscriptionID(ctx context.Context, subscriptionID string) (string, error) {
 	var userID string
 	err := s.pool.QueryRow(ctx,
@@ -123,40 +123,16 @@ func (s *SubscriptionService) GetBySubscriptionID(ctx context.Context, subscript
 	return userID, nil
 }
 
-// GetUserByCustomerID returns the user ID for a Razorpay customer ID.
+// GetUserByCustomerID returns the user ID for a LemonSqueezy customer ID.
 func (s *SubscriptionService) GetUserByCustomerID(ctx context.Context, customerID string) (string, error) {
 	var userID string
 	err := s.pool.QueryRow(ctx,
-		`SELECT id FROM users WHERE razorpay_customer_id = $1`, customerID,
+		`SELECT id FROM users WHERE lemonsqueezy_customer_id = $1`, customerID,
 	).Scan(&userID)
 	if err != nil {
 		return "", fmt.Errorf("querying by customer_id: %w", err)
 	}
 	return userID, nil
-}
-
-// GetByOrderID returns the user ID for a Razorpay order ID.
-func (s *SubscriptionService) GetByOrderID(ctx context.Context, orderID string) (string, error) {
-	var userID string
-	err := s.pool.QueryRow(ctx,
-		`SELECT id FROM users WHERE razorpay_order_id = $1`, orderID,
-	).Scan(&userID)
-	if err != nil {
-		return "", fmt.Errorf("querying by razorpay_order_id: %w", err)
-	}
-	return userID, nil
-}
-
-// RecordOrder stores a Razorpay order ID for the user.
-func (s *SubscriptionService) RecordOrder(ctx context.Context, userID, orderID, plan, amount string) error {
-	_, err := s.pool.Exec(ctx,
-		`UPDATE users SET razorpay_order_id = $2 WHERE id = $1`,
-		userID, orderID,
-	)
-	if err != nil {
-		return fmt.Errorf("recording order: %w", err)
-	}
-	return nil
 }
 
 // GetUserByEmail returns the user ID for an email address.

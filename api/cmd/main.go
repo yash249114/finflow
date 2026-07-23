@@ -122,20 +122,21 @@ func main() {
 	growthService := business.NewGrowthService(pool)
 	revenueService := business.NewRevenueService(pool)
 	retentionService := business.NewRetentionService(pool)
-	forecastAccService := business.NewForecastAccuracyService(pool)
+forecastAccService := business.NewForecastAccuracyService(pool)
 	costTracker := costing.NewCostTracker(pool, rdb)
 	costOptimizer := costing.NewOptimizer(configStore)
 	experimentService := experiment.NewService(pool)
 	limitService := limSvc.NewService(pool, rdb, configStore, eventStore)
 	recEngine := recommendations.NewEngine(pool, configStore)
 	billingSvc := billing.NewSubscriptionService(pool)
+	webhookHdlr := billing.NewWebhookHandler(billingSvc, cfg.LemonSqueezyWebhookSecret)
 
 	// ── Handlers ─────────────────────────────────────────
 	authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, cfg.AppEnv)
 	uploadHandler := handlers.NewUploadHandler(txRepo, userRepo, mlClient, rdb)
 	txHandler := handlers.NewTransactionHandler(txRepo)
 	forecastHandler := handlers.NewForecastHandler(txRepo, mlClient, rdb)
-	billingHandler := handlers.NewBillingHandler(userRepo, billingSvc, cfg.RazorpayKeyID, cfg.RazorpayKeySecret, cfg.RazorpayWebhookSecret, cfg.FrontendURL)
+	billingHandler := handlers.NewBillingHandler(userRepo, billingSvc, webhookHdlr, cfg.LemonSqueezyAPIKey, cfg.LemonSqueezyStoreID, cfg.LemonSqueezyVariantID, cfg.FrontendURL)
 	aiChatHandler := handlers.NewAIChatHandler(copilot, alerter)
 	recommendationsHandler := handlers.NewRecommendationsHandler(txRepo)
 	entitlementHandler := handlers.NewEntitlementHandler(entEngine)
@@ -180,11 +181,11 @@ func main() {
 		auth.POST("/logout", authHandler.Logout)
 	}
 
-	// ── Billing (Razorpay) ─────────────────────────────
+	// ── Billing (LemonSqueezy) ─────────────────────────────
 	// Public endpoints (no auth)
 	r.GET("/api/v1/billing/plans", billingHandler.ListPlans)
 
-	// Webhook (no JWT — verified by Razorpay signature)
+	// Webhook (no JWT — verified by LemonSqueezy signature)
 	if cfg.BillingEnabled() {
 		r.POST("/api/v1/billing/webhook", billingHandler.Webhook)
 	}
@@ -222,12 +223,13 @@ func main() {
 		protected.GET("/transactions", txHandler.List)
 		protected.GET("/transactions/summary", txHandler.Summary)
 
-		// Billing (Razorpay)
-		protected.POST("/billing/checkout", billingHandler.CreateCheckout)
-		protected.GET("/billing/subscription", billingHandler.GetSubscription)
+		// Billing (LemonSqueezy)
 		if cfg.BillingEnabled() {
-			protected.POST("/billing/checkout", billingHandler.CreateCheckout)
+			protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
+			protected.POST("/billing/portal", billingHandler.CreatePortal)
 			protected.GET("/billing/subscription", billingHandler.GetSubscription)
+			protected.POST("/billing/change-plan", billingHandler.ChangePlan)
+			protected.POST("/billing/cancel", billingHandler.CancelSubscription)
 		}
 
 		// AI Product Layer: Entitlements & Usage
@@ -513,8 +515,8 @@ func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Cli
 			}
 		}
 
-		// Billing (Razorpay)
-		if cfg.RazorpayKeyID != "" {
+		// Billing (LemonSqueezy)
+		if cfg.LemonSqueezyAPIKey != "" {
 			components["billing"] = "configured"
 		} else {
 			components["billing"] = "not_configured"

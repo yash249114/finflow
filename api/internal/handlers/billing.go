@@ -344,3 +344,50 @@ func (h *BillingHandler) resolveVariantID(plan, cycle string) string {
 	}
 	return plan
 }
+
+// ListPlans returns available subscription plans.
+func (h *BillingHandler) ListPlans(c *gin.Context) {
+	plans := []gin.H{
+		{
+			"id":         "emerald_monthly",
+			"name":       "Emerald",
+			"slug":       "emerald",
+			"tier":       "pro",
+			"price":      9.99,
+			"currency":   "USD",
+			"interval":   "month",
+			"features":   []string{"Cash flow forecasting", "Fraud detection", "AI recommendations", "1000 transactions/mo"},
+		},
+		{
+			"id":         "emerald_yearly",
+			"name":       "Emerald Annual",
+			"slug":       "emerald",
+			"tier":       "pro",
+			"price":      99.99,
+			"currency":   "USD",
+			"interval":   "year",
+			"features":   []string{"Everything in Emerald Monthly", "2 months free"},
+		},
+		{
+			"id":         "diamond_monthly",
+			"name":       "Diamond",
+			"slug":       "diamond",
+			"tier":       "max",
+			"price":      24.99,
+			"currency":   "USD",
+			"interval":   "month",
+			"features":   []string{"All Emerald features", "Unlimited transactions", "Priority support", "Custom AI models"},
+		},
+		{
+			"id":         "diamond_yearly",
+			"name":       "Diamond Annual",
+			"slug":       "diamond",
+			"tier":       "max",
+			"price":      249.99,
+			"currency":   "USD",
+			"interval":   "year",
+			"features":   []string{"Everything in Diamond Monthly", "2 months free"},
+		},
+	}
+	c.JSON(http.StatusOK, gin.H{"plans": plans})
+}
