@@ -26,21 +26,28 @@ type Config struct {
 	FrontendURL               string
 	AppEnv                    string
 
-	// AIOps
-	TelemetryStream string
-	AlertEmailFrom  string
-	SMTPHost        string
-	SMTPPort        int
-	SMTPUser        string
-	SMTPPassword    string
-	AlertEmailTo    string
-	GitHubToken     string
-	GitHubOwner     string
-	GitHubRepo      string
+	// AI Providers
 	OpenAIAPIKey    string
 	AnthropicAPIKey string
 	GeminiAPIKey    string
-	AIOpsOwnerEmail string
+
+	// Security
+	RecaptchaSecretKey string
+	UpstashRedisURL    string
+	UpstashRedisToken  string
+
+	// AIOps — Self-healing / Self-monitoring
+	TelemetryStream     string
+	AlertEmailFrom      string
+	SMTPHost            string
+	SMTPPort            int
+	SMTPUser            string
+	SMTPPassword        string
+	AlertEmailTo        string
+	GitHubToken         string
+	GitHubOwner         string
+	GitHubRepo          string
+	AIOpsOwnerEmail     string
 	Web3FormsKey        string // Web3Forms access key for support tickets
 	QuotaRefreshMinutes int    // How often to refresh usage quotas (default 5)
 }
@@ -72,39 +79,54 @@ func Load() (*Config, error) {
 		LemonSqueezyWebhookSecret: getEnv("LEMONSQUEEZY_WEBHOOK_SECRET", ""),
 		FrontendURL:               getEnv("FRONTEND_URL", "http://localhost:3000"),
 		AppEnv:                    getEnv("APP_ENV", "development"),
-
-		TelemetryStream: getEnv("TELEMETRY_STREAM", "finflow:telemetry"),
-		AlertEmailFrom:  getEnv("ALERT_EMAIL_FROM", "aiops@finflow.ai"),
-		SMTPHost:        getEnv("SMTP_HOST", ""),
-		SMTPPort:        getIntEnv("SMTP_PORT", 587),
-		SMTPUser:        getEnv("SMTP_USER", ""),
-		SMTPPassword:    getEnv("SMTP_PASSWORD", ""),
-		AlertEmailTo:    getEnv("ALERT_EMAIL_TO", ""),
-		GitHubToken:     getEnv("GITHUB_TOKEN", ""),
-		GitHubOwner:     getEnv("GITHUB_OWNER", "yash249114"),
-		GitHubRepo:      getEnv("GITHUB_REPO", "finflow"),
-		OpenAIAPIKey:    getEnv("OPENAI_API_KEY", ""),
-		AnthropicAPIKey: getEnv("ANTHROPIC_API_KEY", ""),
-		GeminiAPIKey:    getEnv("GEMINI_API_KEY", ""),
-		AIOpsOwnerEmail: getEnv("AIOPS_OWNER_EMAIL", ""),
-		Web3FormsKey:        getEnv("WEB3FORMS_KEY", ""),
-		QuotaRefreshMinutes: getIntEnv("QUOTA_REFRESH_MINUTES", 5),
+		OpenAIAPIKey:              getEnv("OPENAI_API_KEY", ""),
+		AnthropicAPIKey:           getEnv("ANTHROPIC_API_KEY", ""),
+		GeminiAPIKey:              getEnv("GEMINI_API_KEY", ""),
+		RecaptchaSecretKey:        getEnv("RECAPTCHA_SECRET_KEY", ""),
+		UpstashRedisURL:           getEnv("UPSTASH_REDIS_REST_URL", ""),
+		UpstashRedisToken:         getEnv("UPSTASH_REDIS_REST_TOKEN", ""),
+		TelemetryStream:           getEnv("TELEMETRY_STREAM", "finflow:telemetry"),
+		AlertEmailFrom:            getEnv("ALERT_EMAIL_FROM", "aiops@finflow.ai"),
+		SMTPHost:                  getEnv("SMTP_HOST", ""),
+		SMTPPort:                  getIntEnv("SMTP_PORT", 587),
+		SMTPUser:                  getEnv("SMTP_USER", ""),
+		SMTPPassword:              getEnv("SMTP_PASSWORD", ""),
+		AlertEmailTo:              getEnv("ALERT_EMAIL_TO", ""),
+		GitHubToken:               getEnv("GITHUB_TOKEN", ""),
+		GitHubOwner:               getEnv("GITHUB_OWNER", "yash249114"),
+		GitHubRepo:                getEnv("GITHUB_REPO", "finflow"),
+		AIOpsOwnerEmail:           getEnv("AIOPS_OWNER_EMAIL", ""),
+		Web3FormsKey:              getEnv("WEB3FORMS_KEY", ""),
+		QuotaRefreshMinutes:       getIntEnv("QUOTA_REFRESH_MINUTES", 5),
 	}
 
 	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET environment variable is required")
 	}
 
-	if cfg.AppEnv == "production" {
-		if cfg.DatabaseURL == "" {
-			return nil, fmt.Errorf("DATABASE_URL is required in production")
-		}
-		if cfg.LemonSqueezyAPIKey == "" {
-			log.Warn().Msg("LEMONSQUEEZY_API_KEY not set — billing features disabled")
-		}
+	if cfg.DatabaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL environment variable is required")
+	}
+
+	// Billing: disable when any LemonSqueezy key is absent.
+	// All four must be set for billing to function.
+	if cfg.LemonSqueezyAPIKey == "" || cfg.LemonSqueezyStoreID == "" ||
+		cfg.LemonSqueezyVariantID == "" || cfg.LemonSqueezyWebhookSecret == "" {
+		cfg.LemonSqueezyAPIKey = ""
+		cfg.LemonSqueezyStoreID = ""
+		cfg.LemonSqueezyVariantID = ""
+		cfg.LemonSqueezyWebhookSecret = ""
+		log.Warn().Msg("LEMONSQUEEZY_API_KEY, STORE_ID, VARIANT_ID, or WEBHOOK_SECRET missing — billing features disabled")
 	}
 
 	return cfg, nil
+}
+
+// BillingEnabled returns true when all four LemonSqueezy configuration
+// values are present. Billing routes are only registered when this is true.
+func (c *Config) BillingEnabled() bool {
+	return c.LemonSqueezyAPIKey != "" && c.LemonSqueezyStoreID != "" &&
+		c.LemonSqueezyVariantID != "" && c.LemonSqueezyWebhookSecret != ""
 }
 
 func getEnv(key, fallback string) string {

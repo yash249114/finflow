@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -165,8 +166,8 @@ func main() {
 	r.Use(middleware.RateLimit(cfg.RedisURL))
 
 	// ── Health ───────────────────────────────────────────
-	r.GET("/health", healthHandler(pool, rdb, cfg.MLServiceURL, entEngine))
-	r.GET("/api/v1/health", healthHandler(pool, rdb, cfg.MLServiceURL, entEngine))
+	r.GET("/health", healthHandler(pool, rdb, cfg.MLServiceURL, entEngine, cfg))
+	r.GET("/api/v1/health", healthHandler(pool, rdb, cfg.MLServiceURL, entEngine, cfg))
 
 	// ── Auth routes (no middleware) ──────────────────────
 	auth := r.Group("/api/v1/auth")
@@ -177,8 +178,10 @@ func main() {
 		auth.POST("/logout", authHandler.Logout)
 	}
 
-	// ── Billing webhook (Stripe signature, no JWT) ──────
-	r.POST("/api/v1/billing/webhook", billingHandler.Webhook)
+	// ── Billing webhook (no JWT) ───────────────────────
+	if cfg.BillingEnabled() {
+		r.POST("/api/v1/billing/webhook", billingHandler.Webhook)
+	}
 
 	// ── AIOps self-monitoring (rate-limited, no auth required) ─
 	r.GET("/api/aiops/health", func(c *gin.Context) {
@@ -213,9 +216,11 @@ func main() {
 		protected.GET("/transactions", txHandler.List)
 		protected.GET("/transactions/summary", txHandler.Summary)
 
-		// Billing
-		protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
-		protected.POST("/billing/portal", billingHandler.CreatePortal)
+		// Billing (only registered when LemonSqueezy keys are present)
+		if cfg.BillingEnabled() {
+			protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
+			protected.POST("/billing/portal", billingHandler.CreatePortal)
+		}
 
 		// AI Product Layer: Entitlements & Usage
 		protected.GET("/entitlements", entitlementHandler.GetMyEntitlements)
@@ -437,7 +442,8 @@ func monitorDependencies(ctx context.Context, rdb *redis.Client, pool interface 
 }
 
 // healthHandler returns a gin handler that reports the status of each dependency.
-func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Client, mlURL string, entEngine *entitlements.Engine) gin.HandlerFunc {
+// Covers all 7 external integrations: postgres, redis, ml, billing, email, llm, captcha.
+func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Client, mlURL string, entEngine *entitlements.Engine, cfg *config.Config) gin.HandlerFunc {
 	mlClient := &http.Client{Timeout: 5 * time.Second}
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
@@ -497,6 +503,44 @@ func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Cli
 			} else {
 				components["ml"] = "ok"
 			}
+		}
+
+		// Billing (LemonSqueezy)
+		if cfg.LemonSqueezyAPIKey != "" {
+			components["billing"] = "configured"
+		} else {
+			components["billing"] = "not_configured"
+		}
+
+		// Email (SMTP / Resend)
+		if cfg.SMTPHost != "" {
+			components["email"] = "configured"
+		} else {
+			components["email"] = "not_configured"
+		}
+
+		// LLM providers
+		llmProviders := []string{}
+		if cfg.OpenAIAPIKey != "" {
+			llmProviders = append(llmProviders, "openai")
+		}
+		if cfg.AnthropicAPIKey != "" {
+			llmProviders = append(llmProviders, "anthropic")
+		}
+		if cfg.GeminiAPIKey != "" {
+			llmProviders = append(llmProviders, "gemini")
+		}
+		if len(llmProviders) > 0 {
+			components["llm"] = strings.Join(llmProviders, ",")
+		} else {
+			components["llm"] = "not_configured"
+		}
+
+		// reCAPTCHA
+		if cfg.RecaptchaSecretKey != "" {
+			components["captcha"] = "configured"
+		} else {
+			components["captcha"] = "not_configured"
 		}
 
 		c.JSON(http.StatusOK, gin.H{
