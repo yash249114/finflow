@@ -39,6 +39,10 @@ func NewWorker(rdb *redis.Client, stream, reportStream string, pub *Publisher, a
 
 // Start runs the consume + analyze loop until ctx is cancelled.
 func (w *Worker) Start(ctx context.Context) {
+	if w.rdb == nil {
+		log.Println("aiops: worker disabled — Redis unavailable")
+		return
+	}
 	// Ensure consumer group exists (ignore if already created).
 	w.rdb.XGroupCreateMkStream(ctx, w.stream, w.group, "0").Err()
 

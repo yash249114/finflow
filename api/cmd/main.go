@@ -11,10 +11,17 @@ import (
 	"time"
 
 	"github.com/finflow/api/internal/aiops"
+	"github.com/finflow/api/internal/analytics"
+	"github.com/finflow/api/internal/business"
 	"github.com/finflow/api/internal/config"
+	"github.com/finflow/api/internal/costing"
 	"github.com/finflow/api/internal/db"
+	"github.com/finflow/api/internal/entitlements"
+	"github.com/finflow/api/internal/experiment"
 	"github.com/finflow/api/internal/handlers"
+	limSvc "github.com/finflow/api/internal/limits"
 	"github.com/finflow/api/internal/middleware"
+	"github.com/finflow/api/internal/recommendations"
 	jwtService "github.com/finflow/api/internal/services/jwt"
 	"github.com/finflow/api/internal/services/mlclient"
 	"github.com/gin-contrib/cors"
@@ -46,17 +53,17 @@ func main() {
 	defer pool.Close()
 
 	// ── Redis ────────────────────────────────────────────
-	redisOpts, err := redis.ParseURL(cfg.RedisURL)
+	rdb, err := db.ConnectRedis(ctx, cfg.RedisURL)
 	if err != nil {
-		log.Fatal().Err(err).Msg("parsing Redis URL")
+		log.Warn().Err(err).Msg("Redis unavailable — continuing without cache")
+	} else {
+		log.Info().Msg("Redis connection established")
+		defer rdb.Close()
 	}
-	rdb := redis.NewClient(redisOpts)
-	defer rdb.Close()
 
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Fatal().Err(err).Msg("connecting to Redis")
-	}
-	log.Info().Msg("Redis connection established")
+	// ── Background context (cancelled on shutdown) ───────
+	bgCtx, bgCancel := context.WithCancel(ctx)
+	defer bgCancel()
 
 	// ── Services ─────────────────────────────────────────
 	jwtSvc := jwtService.NewService(cfg.JWTSecret, cfg.JWTAccessTTLMin, cfg.JWTRefreshTTLDays)
@@ -80,14 +87,43 @@ func main() {
 	}, rdb, cfg.TelemetryStream+":reports")
 	copilot := aiops.NewCopilot(cfg.OpenAIAPIKey, cfg.AnthropicAPIKey, cfg.GeminiAPIKey)
 	aiopsWorker := aiops.NewWorker(rdb, cfg.TelemetryStream, cfg.TelemetryStream+":reports", telemetry, alerter)
-	aiopsWorker.Start(ctx)
+	if rdb != nil {
+		aiopsWorker.Start(bgCtx)
+	} else {
+		log.Warn().Msg("AIOps worker disabled — Redis unavailable")
+	}
 
-	// Dependency monitoring: periodically probe Redis, Postgres, and ML service.
-	go monitorDependencies(ctx, rdb, pool, cfg.MLServiceURL, telemetry)
+	// Dependency monitoring: periodically probe Postgres and ML service.
+	go monitorDependencies(bgCtx, rdb, pool, cfg.MLServiceURL, telemetry)
 
 	// ── Repositories ─────────────────────────────────────
 	userRepo := db.NewUserRepo(pool)
 	txRepo := db.NewTransactionRepo(pool)
+
+	// ── AI Product Layer: Entitlements Engine ────────────
+	entEngine := entitlements.NewEngine(pool, rdb)
+	if err := entEngine.Start(ctx); err != nil {
+		log.Fatal().Err(err).Msg("starting entitlement engine")
+	}
+	defer entEngine.Stop()
+
+	// Quota refresh background worker
+	quotaRefresher := entitlements.NewQuotaRefresher(entEngine, time.Duration(cfg.QuotaRefreshMinutes)*time.Minute)
+	go quotaRefresher.Start(bgCtx)
+	defer quotaRefresher.Stop()
+
+	// ── Business Intelligence & Analytics Layer ──────────
+	eventStore := analytics.NewEventStore(pool, rdb)
+	configStore := analytics.NewConfigStore(pool)
+	growthService := business.NewGrowthService(pool)
+	revenueService := business.NewRevenueService(pool)
+	retentionService := business.NewRetentionService(pool)
+	forecastAccService := business.NewForecastAccuracyService(pool)
+	costTracker := costing.NewCostTracker(pool, rdb)
+	costOptimizer := costing.NewOptimizer(configStore)
+	experimentService := experiment.NewService(pool)
+	limitService := limSvc.NewService(pool, rdb, configStore, eventStore)
+	recEngine := recommendations.NewEngine(pool, configStore)
 
 	// ── Handlers ─────────────────────────────────────────
 	authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, cfg.AppEnv)
@@ -97,6 +133,12 @@ func main() {
 	billingHandler := handlers.NewBillingHandler(userRepo, cfg.LemonSqueezyAPIKey, cfg.LemonSqueezyStoreID, cfg.LemonSqueezyVariantID, cfg.LemonSqueezyWebhookSecret, cfg.FrontendURL)
 	aiChatHandler := handlers.NewAIChatHandler(copilot, alerter)
 	recommendationsHandler := handlers.NewRecommendationsHandler(txRepo)
+	entitlementHandler := handlers.NewEntitlementHandler(entEngine)
+	analyticsHandler := handlers.NewAnalyticsHandler(
+		eventStore, configStore, growthService, revenueService,
+		retentionService, forecastAccService, costTracker, costOptimizer,
+		experimentService, limitService, recEngine,
+	)
 
 	// ── Router ───────────────────────────────────────────
 	if cfg.AppEnv == "production" {
@@ -110,6 +152,7 @@ func main() {
 	r.Use(requestLogger())
 	r.Use(middleware.SecurityHeaders())
 	r.Use(func(c *gin.Context) { c.Set("redis", rdb); c.Next() })
+	r.Use(func(c *gin.Context) { c.Set("entitlement_engine", entEngine); c.Next() })
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{cfg.FrontendURL},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -120,13 +163,8 @@ func main() {
 	r.Use(middleware.RateLimit(cfg.RedisURL))
 
 	// ── Health ───────────────────────────────────────────
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"service": "finflow-api",
-			"time":    time.Now().UTC().Format(time.RFC3339),
-		})
-	})
+	r.GET("/health", healthHandler(pool, rdb, cfg.MLServiceURL))
+	r.GET("/api/v1/health", healthHandler(pool, rdb, cfg.MLServiceURL))
 
 	// ── Auth routes (no middleware) ──────────────────────
 	auth := r.Group("/api/v1/auth")
@@ -173,18 +211,77 @@ func main() {
 		protected.GET("/transactions", txHandler.List)
 		protected.GET("/transactions/summary", txHandler.Summary)
 
-		// Forecast (pro plan required)
+		// Billing
+		protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
+		protected.POST("/billing/portal", billingHandler.CreatePortal)
+
+		// AI Product Layer: Entitlements & Usage
+		protected.GET("/entitlements", entitlementHandler.GetMyEntitlements)
+		protected.GET("/entitlements/features", entitlementHandler.ListFeatures)
+		protected.GET("/entitlements/tiers", entitlementHandler.ListTiers)
+		protected.GET("/entitlements/usage/:feature", entitlementHandler.GetMyUsage)
+		protected.GET("/entitlements/upgrade", entitlementHandler.GetUpgradeRecommendation)
+
+		// Forecast (feature-gated via entitlement engine)
 		forecast := protected.Group("/forecast")
-		forecast.Use(middleware.RequirePro())
+		forecast.Use(middleware.FeatureGate("cash_flow_forecast"))
 		{
 			forecast.GET("", forecastHandler.GetForecast)
 			forecast.GET("/quality", forecastHandler.GetForecastQuality)
 		}
 
-		// Billing
-		protected.POST("/billing/create-checkout", billingHandler.CreateCheckout)
-		protected.POST("/billing/portal", billingHandler.CreatePortal)
+		// ── Business Intelligence & Analytics ──────────────
+		analytics := protected.Group("/analytics")
+		{
+			// Feature tracking
+			analytics.POST("/events", analyticsHandler.TrackEvent)
+			analytics.GET("/features/usage", analyticsHandler.GetFeatureUsage)
+			analytics.GET("/features/usage/daily", analyticsHandler.GetFeatureUsageDaily)
+
+			// Growth
+			analytics.GET("/growth", analyticsHandler.GetGrowthMetrics)
+			analytics.GET("/growth/dau", analyticsHandler.GetDAU)
+
+			// Revenue
+			analytics.GET("/revenue", analyticsHandler.GetRevenueMetrics)
+			analytics.GET("/revenue/funnel", analyticsHandler.GetConversionFunnel)
+			analytics.GET("/revenue/triggers", analyticsHandler.GetUpgradeTriggers)
+
+			// Retention
+			analytics.GET("/retention/cohorts", analyticsHandler.GetRetentionCohorts)
+			analytics.GET("/retention/churn", analyticsHandler.GetChurnMetrics)
+			analytics.GET("/retention/adoption", analyticsHandler.GetFeatureAdoption)
+
+			// Forecast accuracy
+			analytics.GET("/forecast/accuracy", analyticsHandler.GetForecastAccuracy)
+
+			// Cost monitoring
+			analytics.GET("/costs", analyticsHandler.GetCostSummary)
+			analytics.GET("/costs/daily", analyticsHandler.GetCostByDay)
+			analytics.GET("/costs/optimizations", analyticsHandler.GetCostOptimizations)
+			analytics.GET("/costs/top-users", analyticsHandler.GetTopCostUsers)
+
+			// Experiments
+			analytics.GET("/experiments", analyticsHandler.ListExperiments)
+			analytics.POST("/experiments", analyticsHandler.CreateExperiment)
+			analytics.GET("/experiments/:id/results", analyticsHandler.GetExperimentResults)
+
+			// Usage summary
+			analytics.GET("/usage", analyticsHandler.GetUserUsageSummary)
+
+			// Automated recommendations
+			analytics.GET("/recommendations", analyticsHandler.GetRecommendations)
+			analytics.POST("/recommendations/apply", analyticsHandler.ApplyRecommendation)
+
+			// Business config
+			analytics.GET("/config", analyticsHandler.GetConfig)
+			analytics.PUT("/config", analyticsHandler.UpdateConfig)
+		}
 	}
+
+	// Public entitlement endpoints (no auth)
+	r.GET("/api/v1/features", entitlementHandler.ListFeatures)
+	r.GET("/api/v1/tiers", entitlementHandler.ListTiers)
 
 	// ── Start server ─────────────────────────────────────
 	srv := &http.Server{
@@ -208,6 +305,7 @@ func main() {
 	<-quit
 
 	log.Info().Msg("shutting down server...")
+	bgCancel() // stop background workers
 	shutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -243,17 +341,19 @@ func requestLogger() gin.HandlerFunc {
 			Msg("request")
 
 		// Best-effort AIOps telemetry (dependency-tagged for RCA).
-		status := "ok"
-		if c.Writer.Status() >= 500 {
-			status = "error"
-		} else if c.Writer.Status() >= 400 {
-			status = "degraded"
+		if telemetryPub != nil {
+			status := "ok"
+			if c.Writer.Status() >= 500 {
+				status = "error"
+			} else if c.Writer.Status() >= 400 {
+				status = "degraded"
+			}
+			meta := map[string]string{"type": "internal"}
+			if c.Writer.Status() == 502 || c.Writer.Status() == 503 {
+				meta["type"] = "dependency"
+			}
+			telemetryPub.EmitRequest(c.Request.Context(), c.Request.URL.Path, status, float64(latency.Milliseconds()), nil, meta)
 		}
-		meta := map[string]string{"type": "internal"}
-		if c.Writer.Status() == 502 || c.Writer.Status() == 503 {
-			meta["type"] = "dependency"
-		}
-		telemetryPub.EmitRequest(c.Request.Context(), c.Request.URL.Path, status, float64(latency.Milliseconds()), nil, meta)
 	}
 }
 
@@ -265,13 +365,16 @@ func monitorDependencies(ctx context.Context, rdb *redis.Client, pool interface 
 }, mlURL string, telemetry *aiops.Publisher) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
+	client := &http.Client{Timeout: 10 * time.Second}
 	probe := func() {
-		// Redis
+		// Redis (nil-safe)
 		start := time.Now()
-		if err := rdb.Ping(ctx).Err(); err != nil {
-			telemetry.EmitRequest(ctx, "redis", "error", float64(time.Since(start).Milliseconds()), err, map[string]string{"type": "dependency"})
-		} else {
-			telemetry.EmitRequest(ctx, "redis", "ok", float64(time.Since(start).Milliseconds()), nil, map[string]string{"type": "dependency"})
+		if rdb != nil {
+			if err := rdb.Ping(ctx).Err(); err != nil {
+				telemetry.EmitRequest(ctx, "redis", "error", float64(time.Since(start).Milliseconds()), err, map[string]string{"type": "dependency"})
+			} else {
+				telemetry.EmitRequest(ctx, "redis", "ok", float64(time.Since(start).Milliseconds()), nil, map[string]string{"type": "dependency"})
+			}
 		}
 		// Postgres
 		start = time.Now()
@@ -282,9 +385,10 @@ func monitorDependencies(ctx context.Context, rdb *redis.Client, pool interface 
 		}
 		// ML service
 		start = time.Now()
-		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, mlURL+"/health", nil)
-		resp, err := http.DefaultClient.Do(req)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, mlURL+"/health", nil)
 		if err != nil {
+			telemetry.EmitRequest(ctx, "ml-service", "error", float64(time.Since(start).Milliseconds()), err, map[string]string{"type": "dependency"})
+		} else if resp, err := client.Do(req); err != nil {
 			telemetry.EmitRequest(ctx, "ml-service", "error", float64(time.Since(start).Milliseconds()), err, map[string]string{"type": "dependency"})
 		} else {
 			resp.Body.Close()
@@ -297,24 +401,25 @@ func monitorDependencies(ctx context.Context, rdb *redis.Client, pool interface 
 
 		// ML model signals (drift + confidence) for AIOps self-monitoring.
 		start = time.Now()
-		mreq, _ := http.NewRequestWithContext(ctx, http.MethodGet, mlURL+"/metrics", nil)
-		mresp, merr := http.DefaultClient.Do(mreq)
-		if merr == nil {
-			defer mresp.Body.Close()
-			var md struct {
-				DriftScore      float64 `json:"drift_score"`
-				ConfidenceScore float64 `json:"confidence_score"`
-			}
-			if json.NewDecoder(mresp.Body).Decode(&md) == nil {
-				telemetry.Emit(ctx, aiops.TelemetryEvent{
-					Kind:       "model",
-					Operation:  "drift",
-					Status:     "ok",
-					LatencyMs:  float64(time.Since(start).Milliseconds()),
-					DriftScore: md.DriftScore,
-					Confidence: md.ConfidenceScore,
-					Meta:       map[string]string{"type": "model"},
-				})
+		mreq, err := http.NewRequestWithContext(ctx, http.MethodGet, mlURL+"/metrics", nil)
+		if err == nil {
+			if mresp, merr := client.Do(mreq); merr == nil {
+				defer mresp.Body.Close()
+				var md struct {
+					DriftScore      float64 `json:"drift_score"`
+					ConfidenceScore float64 `json:"confidence_score"`
+				}
+				if json.NewDecoder(mresp.Body).Decode(&md) == nil {
+					telemetry.Emit(ctx, aiops.TelemetryEvent{
+						Kind:       "model",
+						Operation:  "drift",
+						Status:     "ok",
+						LatencyMs:  float64(time.Since(start).Milliseconds()),
+						DriftScore: md.DriftScore,
+						Confidence: md.ConfidenceScore,
+						Meta:       map[string]string{"type": "model"},
+					})
+				}
 			}
 		}
 	}
@@ -326,5 +431,65 @@ func monitorDependencies(ctx context.Context, rdb *redis.Client, pool interface 
 		case <-ticker.C:
 			probe()
 		}
+	}
+}
+
+// healthHandler returns a gin handler that reports the status of each dependency.
+func healthHandler(pool interface{ Ping(context.Context) error }, rdb *redis.Client, mlURL string) gin.HandlerFunc {
+	mlClient := &http.Client{Timeout: 5 * time.Second}
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+		defer cancel()
+
+		status := "ok"
+		components := map[string]string{}
+
+		// PostgreSQL
+		if err := pool.Ping(ctx); err != nil {
+			components["postgres"] = "unavailable"
+			status = "degraded"
+		} else {
+			components["postgres"] = "ok"
+		}
+
+		// Redis (nil-safe)
+		if rdb == nil {
+			components["redis"] = "not_configured"
+		} else if err := rdb.Ping(ctx).Err(); err != nil {
+			components["redis"] = "unavailable"
+			if status == "ok" {
+				status = "degraded"
+			}
+		} else {
+			components["redis"] = "ok"
+		}
+
+		// ML service
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, mlURL+"/health", nil)
+		if err != nil {
+			components["ml"] = "unknown"
+		} else if resp, err := mlClient.Do(req); err != nil {
+			components["ml"] = "unavailable"
+			if status == "ok" {
+				status = "degraded"
+			}
+		} else {
+			resp.Body.Close()
+			if resp.StatusCode >= 500 {
+				components["ml"] = "unavailable"
+				if status == "ok" {
+					status = "degraded"
+				}
+			} else {
+				components["ml"] = "ok"
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":     status,
+			"service":    "finflow-api",
+			"time":       time.Now().UTC().Format(time.RFC3339),
+			"components": components,
+		})
 	}
 }

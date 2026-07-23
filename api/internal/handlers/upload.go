@@ -307,11 +307,13 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	h.rdb.Del(c.Request.Context(),
-		fmt.Sprintf("forecast:%s:30", userID),
-		fmt.Sprintf("forecast:%s:60", userID),
-		fmt.Sprintf("forecast:%s:90", userID),
-	)
+	if h.rdb != nil {
+		h.rdb.Del(c.Request.Context(),
+			fmt.Sprintf("forecast:%s:30", userID),
+			fmt.Sprintf("forecast:%s:60", userID),
+			fmt.Sprintf("forecast:%s:90", userID),
+		)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"uploaded":  inserted,

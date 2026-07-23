@@ -72,9 +72,11 @@ func (m *IngestionManager) InitializeStatus(ctx context.Context, userID, fileNam
 	}
 
 	key := fmt.Sprintf("upload:%s", uploadID)
-	err = m.rdb.Set(ctx, key, data, 24*time.Hour).Err()
-	if err != nil {
-		return "", err
+	if m.rdb != nil {
+		err = m.rdb.Set(ctx, key, data, 24*time.Hour).Err()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return uploadID, nil
@@ -82,6 +84,9 @@ func (m *IngestionManager) InitializeStatus(ctx context.Context, userID, fileNam
 
 // GetStatus retrieves the current ingestion progress metrics.
 func (m *IngestionManager) GetStatus(ctx context.Context, uploadID string) (*UploadStatus, error) {
+	if m.rdb == nil {
+		return nil, fmt.Errorf("redis unavailable")
+	}
 	key := fmt.Sprintf("upload:%s", uploadID)
 	data, err := m.rdb.Get(ctx, key).Bytes()
 	if err != nil {
@@ -98,6 +103,9 @@ func (m *IngestionManager) GetStatus(ctx context.Context, uploadID string) (*Upl
 
 // updateStatus writes current status changes back to Redis.
 func (m *IngestionManager) updateStatus(ctx context.Context, status *UploadStatus) {
+	if m.rdb == nil {
+		return
+	}
 	key := fmt.Sprintf("upload:%s", status.UploadID)
 	data, err := json.Marshal(status)
 	if err == nil {
@@ -234,11 +242,13 @@ func (m *IngestionManager) StartIngest(userID, uploadID, filePath string) {
 		m.updateStatus(ctx, status)
 
 		// Invalidate caches
-		m.rdb.Del(ctx,
-			fmt.Sprintf("forecast:%s:30", userID),
-			fmt.Sprintf("forecast:%s:60", userID),
-			fmt.Sprintf("forecast:%s:90", userID),
-		)
+		if m.rdb != nil {
+			m.rdb.Del(ctx,
+				fmt.Sprintf("forecast:%s:30", userID),
+				fmt.Sprintf("forecast:%s:60", userID),
+				fmt.Sprintf("forecast:%s:90", userID),
+			)
+		}
 		log.Info().Str("upload_id", uploadID).Int("processed", status.ProcessedRows).Msg("CSV background ingestion pipeline completed successfully")
 	}()
 }

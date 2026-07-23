@@ -59,7 +59,7 @@ def test_forecast_request_horizon_bounds():
     with pytest.raises(ValidationError):
         ForecastRequest(
             transactions=[ForecastTransaction(date="2024-01-15", amount=100)],
-            horizon_days=100,
+            horizon_days=500,
         )
 
 

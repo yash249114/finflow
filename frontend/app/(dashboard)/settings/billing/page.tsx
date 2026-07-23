@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Sparkles, Lock, CreditCard, HelpCircle, ArrowRight, Star, Send } from "lucide-react";
@@ -12,7 +12,7 @@ import { detectUserCurrency, CURRENCIES, formatPrice, type CurrencyCode } from "
 import { CursorGlow } from "@/components/ui/cursor-glow";
 import { fadeSlideUp, staggerContainer, scaleIn } from "@/lib/motion";
 
-export default function BillingPage() {
+function BillingPageContent() {
   const searchParams = useSearchParams();
   const { user, refetch } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -673,5 +673,13 @@ export default function BillingPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="flex h-96 items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+      <BillingPageContent />
+    </Suspense>
   );
 }

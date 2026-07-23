@@ -23,20 +23,23 @@ export default function Home() {
       {/* METRICS BAR */}
       <StatsBar />
 
-      {/* CORE FEATURES */}
+      {/* DASHBOARD MOCKUP - showcases product capabilities */}
+      <DashboardMockup />
+
+      {/* CORE FEATURES - product demonstration sections */}
       <Features />
 
-      {/* DASHBOARD MOCKUP */}
-      <DashboardMockup />
+      {/* FEATURES - detailed feature showcase */}
+      <Features />
 
       {/* PRICING */}
       <Pricing />
 
-      {/* TESTIMONIALS */}
-      <Testimonials />
-
       {/* MAX SECTION */}
       <Max />
+
+      {/* TESTIMONIALS */}
+      <Testimonials />
 
       {/* CTA */}
       <CtaSection />

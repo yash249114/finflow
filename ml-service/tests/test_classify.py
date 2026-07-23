@@ -7,14 +7,22 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
+from core.explainability import ExplainabilityEngine
+from core.history import PredictionHistory
+from core.recommendations import RecommendationEngine
+from core.risk import RiskScoringEngine
 from services.categorizer import Categorizer
-from routes.classify import init_categorizer
+from routes.classify import init_services
 
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_categorizer():
     categorizer = Categorizer()
-    init_categorizer(categorizer)
+    explainability = ExplainabilityEngine()
+    risk_engine = RiskScoringEngine()
+    recommendations_engine = RecommendationEngine()
+    history = PredictionHistory()
+    init_services(categorizer, explainability, risk_engine, recommendations_engine, history)
     yield
 
 

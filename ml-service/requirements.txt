@@ -9,3 +9,18 @@ numpy==1.26.4
 pandas==2.2.2
 pytest==8.2.2
 httpx==0.27.0
+
+# ML Model Libraries
+catboost==1.2.5
+lightgbm==4.3.0
+xgboost==2.0.3
+prophet==1.1.5
+
+# Deep Learning (optional — for LSTM/Transformer models)
+torch>=2.0.0
+
+# Explainability
+shap==0.45.1
+
+# Additional dependencies
+scipy>=1.11.0

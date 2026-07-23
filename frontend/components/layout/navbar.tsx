@@ -56,19 +56,19 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
-              href="/#features"
+              href="/features"
               className="text-sm text-gray-400 hover:text-white transition-colors relative py-1"
             >
               Features
             </Link>
             <Link
-              href="/#pricing"
+              href="/pricing"
               className="text-sm text-gray-400 hover:text-white transition-colors relative py-1"
             >
               Pricing
             </Link>
             <Link
-              href="/#max"
+              href="/max"
               className="text-sm text-gray-400 hover:text-white transition-colors relative py-1"
             >
               FinFlow MAX
@@ -125,21 +125,21 @@ export default function Navbar() {
           >
             <div className="flex flex-col space-y-3 px-6 py-6 text-center">
               <Link
-                href="/#features"
+                href="/features"
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 hover:text-white text-sm py-2 border-b border-gray-900"
               >
                 Features
               </Link>
               <Link
-                href="/#pricing"
+                href="/pricing"
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 hover:text-white text-sm py-2 border-b border-gray-900"
               >
                 Pricing
               </Link>
               <Link
-                href="/#max"
+                href="/max"
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 hover:text-white text-sm py-2 border-b border-gray-900"
               >

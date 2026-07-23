@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-const cspNonce = process.env.CSP_NONCE || '';
 const nextConfig = {
   output: "standalone",
   async headers() {

@@ -44,7 +44,11 @@ func (h *ForecastHandler) GetForecast(c *gin.Context) {
 
 	// Check Redis cache
 	cacheKey := fmt.Sprintf("forecast:%s:%d", userID, horizon)
-	cached, err := h.rdb.Get(c.Request.Context(), cacheKey).Result()
+	var cached string
+	var err error
+	if h.rdb != nil {
+		cached, err = h.rdb.Get(c.Request.Context(), cacheKey).Result()
+	}
 	if err == nil && cached != "" {
 		// Return cached response
 		var result interface{}
@@ -82,7 +86,7 @@ func (h *ForecastHandler) GetForecast(c *gin.Context) {
 
 	// Cache result for 1 hour
 	forecastBytes, err := json.Marshal(forecast)
-	if err == nil {
+	if err == nil && h.rdb != nil {
 		h.rdb.Set(c.Request.Context(), cacheKey, string(forecastBytes), 1*time.Hour)
 	}
 
@@ -139,7 +143,10 @@ func (h *ForecastHandler) GetForecastQuality(c *gin.Context) {
 
 	// Try to get cached forecast and compare
 	cacheKey := fmt.Sprintf("forecast:%s:30", userID)
-	cached, err := h.rdb.Get(c.Request.Context(), cacheKey).Result()
+	var cached string
+	if h.rdb != nil {
+		cached, err = h.rdb.Get(c.Request.Context(), cacheKey).Result()
+	}
 	if err != nil || cached == "" {
 		// No forecast available; return synthetic metrics based on data quality
 		c.JSON(http.StatusOK, ForecastQualityMetrics{

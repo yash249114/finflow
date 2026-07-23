@@ -394,6 +394,14 @@ class Categorizer:
 
         return results
 
+    def predict_proba(self, descriptions: list[str]) -> list[list[float]]:
+        """Return class probabilities for each description."""
+        if not descriptions:
+            return []
+        if self.pipeline is None:
+            return [[1.0]]
+        return self.pipeline.predict_proba(descriptions).tolist()
+
     @property
     def is_loaded(self) -> bool:
         return self.pipeline is not None

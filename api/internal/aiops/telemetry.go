@@ -56,6 +56,9 @@ func (p *Publisher) Emit(ctx context.Context, e TelemetryEvent) {
 		return
 	}
 	// Best-effort: do not block the caller on telemetry.
+	if p.rdb == nil {
+		return
+	}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
